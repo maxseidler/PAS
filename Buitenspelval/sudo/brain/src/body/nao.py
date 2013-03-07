@@ -684,7 +684,8 @@ class Nao(object):
         pitch = HEAD_PITCH + center_pitch
         self.set_angles(['HeadYaw', 'HeadPitch'], [yaw, pitch], 0.2, radians=True)
         
-
+    def select_camera(self, cameraNr):
+        self.camera = cameraNr
 
 #########
 # NOTES #
