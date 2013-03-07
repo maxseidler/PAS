@@ -1,0 +1,77 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= black,
+	linkcolor= black,
+    citecolor= black,
+}
+
+\lstset{language=c, frame=lines, basicstyle=\tt, tabsize=4, numberstyle=\tt}
+
+
+\title{HOWTO - Start with the Haarface Detector}
+\author{Team BORG}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This document introduces you to the HaarFace detector module.
+The HaarFace module allows you to detect faces (not recognize them!).
+
+\textbf{Please note that this document is a work in progress and may be updated in time.}
+
+\section{Installation}
+
+\begin{enumerate}
+    \item Install python, opencv and pygame on a linux box:
+\begin{lstlisting}
+# sudo apt-get update
+# sudo apt-get install python python-opencv
+\end{lstlisting}
+    \item Use Python \lstinline{pip} or install manually if the above does not work.
+\end{enumerate}
+
+\section{Basic Training Procedure}
+
+No training should be needed.
+
+\section{Observation Properties}
+
+The following observation properties are available (see example and module for more information):
+\begin{enumerate}
+    \item \lstinline{pixel_location}: Absolute pixel location of the detection.
+    \item \lstinline{relative_location}: Relative location of the detection.
+    \item \lstinline{face_area}: Absolute face area.
+    \item \lstinline{relative_face_area}: Relative face area, can be used as measurement of the distance of the face.
+    \item \lstinline{confidence}: The confidence value, the higher the better.
+    \item \lstinline{dimensions}: The dimensions of the camera used (widht height).
+\end{enumerate}
+
+\section{Example Usage}
+
+The following files provide you with an example:
+\begin{enumerate}
+    \item \lstinline{$BORG/brain/src/config/config_haarface_example}
+    \item \lstinline{$BORG/brain/src/behavior/examplehaarface/examplehaarface_1.py}
+\end{enumerate}
+
+Please refer to the actual ``haarface'' module for more information.
+
+\end{document}
+

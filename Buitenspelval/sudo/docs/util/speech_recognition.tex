@@ -1,0 +1,120 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+\usepackage{rotating}
+\usepackage{pdflscape}
+\usepackage{textcomp}
+
+\title{\huge{Speech Recognition Manual}}
+\author{Wolter Peterson}
+\date{Version 1.0, 17-05-2011}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This document is based on Tim van Elterens work and covers the speech recognition module for use in the architecture that is currently supported by the robot. Information on the speech recognition system that is used in this module is located here:
+
+\begin{verbatim}
+http://cmusphinx.sourceforge.net/sphinx4/
+\end{verbatim}
+
+
+\section{Speech Recognition Module}
+
+The speech recognition module consists of a precompiled java executable JARfile (speech.jar), a configurationfile (\textless behaviourname\textgreater.config.xml) and a grammarfile (vcc.gram). The speech.jar might not be located in the repository because of it's size (\textgreater18MB's) and is thereby available elsewhere. The configuration- and grammarfiles are located in the robotica/Brain/src/speech folder.
+
+The speech client (speech.jar) can be started standalone using the command: 
+
+\begin{verbatim}
+java -jar pathtojarfile/speech.jar <behaviourname>.config.xml
+\end{verbatim}
+
+\section{Grammars}
+
+The grammars can be found within the speech/client/grammar folder and are divided first by competition and then by task. Each task requires its own grammar. 
+The grammar you want to use should be located in the folder for that task and should be have the same name as the folder it is in (e.g. who\_is\_who.gram).
+The grammars are called from a .config.xml file, that has the same name as the behaviour, in the speech/client map.
+
+\section{Configuration Files}
+To be able to specify the grammar to use, in the config file for the behaviour, a .config.xml file is needed for every behaviour that needs the speech recognition.\\
+The config files are exactly the same except for the path it specifies where the grammar (vcc.gram) it should use is. 
+The reason for this slightly strange method is that it is only possible to specify which config file to use when calling the CMU Sphinx system.
+
+\newpage
+\section{Integration with the architecture}
+
+In this section the use of the speech recognition module in combination with the architecture will be covered. The executable jarfile (speech.jar) communicates with the speech controller. 
+The speech controller puts received speech commands in the global memory to be used by behaviours.
+The use of the speech controller is controlled in the config file. No alterations to the start.sh are required to run behaviours which require speech recognition.\\
+\\
+The configurationfile of a behaviour using the speech recognition module should, next to other things it needs to run, contain the following:
+
+\begin{verbatim}
+[speech_controller]
+modules = speech_controller
+speech_controller = 50025
+start_speech = true
+grammar = <behaviourname>.config.xml
+\end{verbatim}
+The ``start\_speech'' is used to tell the start.sh script to run the code that starts the speech recognition module. 
+After this code starts the start.sh script will extract the ``grammar'' from the config file. Now,  start the speech recognition module using that .config.xml file
+
+\subsection{start.sh}
+After telling the start.sh to use speech recognition the grammar filename is extracted from the config file. The value of this is stored in the variable prop\_value.
+Now the system has everything it needs to start the actual speech recognition and the speech.jar will be started using the same command as you would with standalone use.
+ 
+\begin{verbatim}
+java -jar speech/client/speech.jar ${prop_value} &
+\end{verbatim}
+
+When the start.sh script is run the output should be similar to:
+
+\begin{verbatim}
+s1787675@ai17815:~/PAS/robotica/Brain/src$ start.sh config/config_follow_me
+Arguments are        :  config/config_follow_me
+Configuration file is:  config/config_follow_me
+Logging options: --log=Borg.Brain --log-level=WARNING 
+arguments:  ['brain.py', '--log=Borg.Brain', '--log-level=WARNING', 'config/config_follow_me']
+[('--log', 'Borg.Brain'), ('--log-level', 'WARNING')] ['config/config_follow_me']
+string:  speech_controller
+modules:  ['speech_controller']
+starting in connect module
+Port speech controller:  50025
+Waiting for connection on port:  50025
+starting java
+Key = grammar ; Value =  follow_me.config.xml
+**************************************
+* When you press enter or ctrl-c,    *
+* all created process will be killed *
+**************************************
+Connected by ('127.0.0.1', 46819)
+Socket[addr=localhost/127.0.0.1,port=50025,localport=46819]
+Connected ...
+[12:10:33] initializing default recognizer..
+INF: Registering module : ALFileManager
+INF: Registering module : ALNetwork
+[12:10:35] initializing microphone..
+[12:10:35] listening..
+\end{verbatim}
+
+\section{Microphone settings}
+
+Go to System, Preferences, Sound, Input tab and select the correct input and input level. Make sure that the preferred microphone is selected and that the input level is set to 100 percent. The current microphone used on the robot performs well if the speaker is located up to a meter distance from the microphone. In the case of a lot of background noise the maximum distance drops to about half a meter.
+
+\section{Example behaviours}
+
+In the behaviour folder in the repository some examples can be found for the usage of recognized speech commands in behaviours. 
+An example is given in the ``examplespeech'' behavior and the ``\lstinline{config_example_speech}'' configuration file.
+
+\end{document}

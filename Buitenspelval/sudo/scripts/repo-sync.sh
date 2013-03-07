@@ -1,0 +1,15 @@
+#! /bin/bash
+
+echo -e "\n>> Repository update started"
+echo -e "\n>> Updating laptops from (brain repository) ... "
+echo -e "\n>> brain"
+ssh borg@brain -T "cd ~/Robocup/robotica; hg pull; hg update"
+echo -e "\n>> vision-front"
+ssh borg@vision-front -T "cd ~/Robocup/robotica; hg pull; hg update"
+echo -e "\n>> vision-back"
+ssh borg@vision-back -T "cd ~/Robocup/robotica; hg pull; hg update"
+echo -e "\n>> kinect-main"
+ssh borg@kinect-main -T "cd ~/Robocup/robotica; hg pull; hg update"
+echo -e "\n>> kinect-nav"
+ssh borg@kinect-nav -T "cd ~/Robocup/robotica; hg pull; hg update"
+echo -e "\n>> Finished repository update ..."

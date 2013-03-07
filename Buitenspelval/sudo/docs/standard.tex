@@ -1,0 +1,357 @@
+% [page size, font size, recto-verso]{style of the document}
+\documentclass[a4paper, 12pt, oneside]{report}
+
+% Encoding of this file. On Linux, all files are UTF8 encoded.
+\usepackage[utf8x]{inputenc}
+
+% To write mathematical formula:
+% \begin{align} ... \end{align}, \begin{equation} ... \end{equation}
+\usepackage{amsmath, amssymb}
+
+% To insert graphics:
+% \includegraphics[options]{path}
+\usepackage{graphicx}
+
+% The allowed type of image files.
+\DeclareGraphicsExtensions{.pdf, .png}
+
+% To include code file without any layout
+% \verbatiminput{path}
+\usepackage{verbatim}
+
+% To include PDF files
+% \includepdf[pages = z,x-y]{path}
+\usepackage{pdfpages}
+
+% To do tables on many pages
+% \begin{longtable}{define the columns} ... \end{longtable}
+\usepackage{longtable}
+
+
+\textwidth=16cm
+\oddsidemargin=0pt
+\evensidemargin=0pt
+
+%% The 3 variables which you must initialize:
+% Title of the document,
+\newcommand{\titleVariable}{Standards}
+% The author(s),
+\newcommand{\authorVariable}{Tijn van Der Zaar \& Jean-David Boucher}
+% The date of the first release.
+\newcommand{\firstRelease}{March 26, 2010}
+
+\usepackage{hyperref}
+% To create all hypertext links for the bibliography, the figures, the bookmarks etc.
+% \url{http://www.thewebsite.org}
+\hypersetup{
+% 	backref=true,
+% 	pagebackref=true,
+% 	hyperindex=true,
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= blue,
+	linkcolor= blue,
+% 	bookmarks=true,
+	bookmarksopen=true,
+	pdftitle={\titleVariable},
+	pdfauthor={\authorVariable},
+	pdfsubject={Documentation}
+}
+
+\title{\titleVariable}
+\author{\authorVariable}
+
+
+\date{\centering First release: \firstRelease \\ Last modification: \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This documentation is devided in two chapter. The first one (chapter \ref{Documentation}) is devoted in the manner to create a good documentation. Indeed, the documentation of a project is a touchstone for the developers. Indeed, the latter is necessary to know at which stage the work is, if functionnalities are still implement, how to use and manage their. There are three main tools to make documentations: the \textit{word processors}, \LaTeX and \textit{Doxygen} (see respectively the sections \ref{Word processors}, \ref{LaTeX}, \ref{Doxygen}).\\
+\\
+In the second chapter (chapter \ref{Standard coding}) we detail the way to code in well format. Actually, respecting a strict standard of coding (indentation, syntax of variables, classes etc.) allows to a programmer to read some code that she/he have not developed. This feeling of \textit{déjà-vu} facilitate the modification, the maintenance and the management of it.
+\end{abstract}
+
+
+\tableofcontents
+% To create a table of contents at the beginning of the documentation.
+
+\chapter{Documentation \label{Documentation}}
+The documentation of a project is a touchstone for the developers. Indeed, the latter is necessary to know at which stage the work is, if functionnalities are still implement, how to use and manage their. There are three main tools to make documentations: the \textit{word processors}, \LaTeX and \textit{Doxygen} (see respectively the sections \ref{Word processors}, \ref{LaTeX}, \ref{Doxygen}).\\
+\\
+When someone develops some code in \textit{Python}, \textit{C/C++}, she/he must comment in \textit{Doxygen} manner in order to be understandable and reusable by someone else. Moreover, \textit{Doxygen} program makes \textit{UML} diagrams and \textit{HTML} pages that enable an easy navigation into the project.\\
+\\
+In case that (i) the developped code is substantial or (ii) the functionnalities are not a package in programming language, then an explanatory document must be written. For that, two tools are available: the \textit{word processors} and \LaTeX. The last one is prefered because a template still exists.
+
+% convention typographique
+
+\section{Word processors \label{Word processors}}
+Nowdays, Microsoft Word and Open Writer are the leaders of the \textit{word processors}. Because the robocup project is running on GNU/Linux and Windows plateform all users must respect the interoperability of producted documentations. If you use Microsoft Word you must save your document in \textit{Rich Text Format} (extension file \textit{RTF}). But the best way is to use Open Writer which is a multi-plateform (GNU/Linux and Windows) and save the document in the default format (extension file \textit{ODP}).\\
+\\
+On Windows, you can download the executable at \\
+\url{http://www.openoffice.org/} \\
+\\
+On Ubuntu, you can install it by typing the command line:
+\begin{verbatim}
+	sudo apt-get install openoffice.org
+\end{verbatim}
+
+
+\section{\LaTeX \label{LaTeX}}
+\LaTeX allows to produce easily a shared document, in a sens that everybody can use the same template and consequently can create a documentation with a common page setting. Moreover, code and PDF files can be include without changing something of the TEX file but just by compling it. Lot of documentations are available on the web, one of them: \\
+\url{http://en.wikibooks.org/wiki/LaTeX/} \\
+Others can be find on the ftp server of the Inserm U846.\\
+The commented template (\texttt{template.tex} file) is available in the documentation folder of \textit{mercurial}:
+\verbatiminput{template.tex}
+It is important to note that three variables must be changed:
+\begin{verbatim}
+	% Title of the document,
+	\newcommand{\titleVariable}{Put the title}
+	% The author(s),
+	\newcommand{\authorVariable}{Put the authors}
+	% The date of the first release.
+	\newcommand{\firstRelease}{Put the date of the first release}
+\end{verbatim}
+
+
+
+\subsection{Write code}
+To write many lines of code :\\
+\verb|\begin{verbatim}| \\
+\verb|    a multi-line Python or C/C++ code| \\
+\verb|\end{verbatim}| \\
+To write one line of code:
+\verb#\verb|a Python or C/C++ code|# \\
+The symbol \texttt{|} can be replaced by anything else like \texttt{\#} for instance. You can also use a monospace font in order to include a specific code name by using the special command \verb|\texttt{TheClassName}|.
+
+\subsection{Include code file}
+You can include an entire code file by using the command \verb|\verbatiminput{path}| from the package \texttt{verbatim}.
+
+\subsection{Include PDF file}
+You can also include the whole or a part of a PDF file by using the command\\
+\verb|\includepdf[pages = z,x-y]{path}|
+from the package \texttt{pdfpages}.
+
+\subsection{Include image file}
+To include an image use the command \verb|\includegraphics| from the package \texttt{graphicx}. An example of a command : \\
+\verb|\includegraphics[width=\textwidth or another size]{path}| \\
+You have many options to crop, resize etc. the image. Preferably, use PDF or PNG \verb|\DeclareGraphicsExtensions{.pdf, .png}| file format because. PNG and PDF are the most portable format but note that PDF is a vectorial image.
+
+\subsection{Figures}
+To create a figure that floats, use the figure environment.
+\begin{verbatim}
+\begin{figure}[placement specifier]
+    ... figure contents ...
+\end{figure}
+\end{verbatim}
+\begin{center}
+	\begin{tabular}{|c|p{8cm}|}
+		\hline
+		Specifier	& Permission \\
+		\hline
+		h	& Place the float here, i.e., approximately at the same point it occurs in the source text (however, not exactly at the spot) \\
+		\hline
+		t	& Position at the top of the page. \\
+		\hline
+		b	& Position at the bottom of the page. \\
+		\hline
+		p	& Put on a special page for floats only. \\
+		\hline
+		!	& Override internal parameters Latex uses for determining "good" float positions. \\
+		\hline
+	\end{tabular}
+\end{center}
+
+In the previous section, I was saying how floats are used to allow Latex to handle figures, whilst maintaining the best possible presentation. However, there may be times when you disagree, and a typical example is with its positioning of figures. The placement specifier parameter exists as a compromise, and its purpose is to give the author a greater degree of control over where certain floats are placed.
+
+\subsection{Tables}
+Although tables have already been covered, it was only the internal syntax that was discussed. The tabular environment that was used to construct the tables is not a float by default. Therefore, for tables you wish to float, wrap the tabular environment within a table environment, like this:
+\begin{verbatim}
+\begin{table}
+    \begin{tabular}{...}
+        ... table data ...
+    \end{tabular}
+\end{table}
+\end{verbatim}
+You may feel that it is a bit long winded, but such distinctions are necessary, because you may not want all tables to be treated as a float.
+
+
+\subsection{Caption}
+It is always good practice to add a caption to any figure or table. Fortunately, this is very simple in Latex. All you need to do is use the \verb|\caption{text}| command within the float environment. Because of how LaTeX deals sensibly with logical structure, it will automatically keep track of the numbering of figures, so you do not need to include this within the caption text.\\
+\\
+The location of the caption is traditionally underneath the float. However, it is up to you to therefore insert the caption command after the actual contents of the float (but still within the environment). If you place it before, then the caption will appear above the float. Try out the following example to demonstrate this effect:
+\begin{verbatim}
+\begin{figure}[h!]
+    \caption{A picture of a gull.}
+    \centering
+    \includegraphics[width=0.5\textwidth]{gull}
+    \caption{A picture of a gull looking the other way!}
+\end{figure}
+  
+\begin{table}[h!]
+    \begin{center}
+        \begin{tabular}{| l c r |}
+        \hline
+        1 & 2 & 3 \\
+        4 & 5 & 6 \\
+        7 & 8 & 9 \\
+        \hline
+        \end{tabular}
+    \end{center}
+    \caption{A simple table}
+\end{table}
+
+\end{verbatim}
+
+
+\subsection{Cross-referencing}
+Another good point of LaTeX is that you can easily reference almost anything that is numbered (sections, figures, formulas), and LaTeX will take care of numbering, updating it whenever necessary. The commands to be used do not depend on what you are referencing, and they are:
+\begin{verbatim}
+	\label{marker}
+	you give the object you want to reference a marker, you can see
+	it like a name.
+	\ref{marker}
+	you can reference the object you have marked before.
+	This prints the number that was assigned to the object.
+\end{verbatim}
+The main utilizations are:
+\begin{verbatim}
+	\section{Introduction}
+	We will see in the section \ref{The section blabla}.
+	\section{The section blabla \label{The section blabla}}
+\end{verbatim}
+or
+\begin{verbatim}
+	The figure \ref{The figure blabla} clarify this point of view
+	\begin{figure}
+	    \includegraphics[width=\textwidth or another size]{path}|
+	    \caption[The little caption]{The very long caption}
+	    \label{The figure blabla}
+	\end{figure}
+\end{verbatim}
+
+\section{Doxygen \label{Doxygen}}
+Doxygen\footnote{The main web page is \url{http://www.stack.nl/~dimitri/doxygen/index.html}} is a source code documentation generator tool for Python, C/C++, C\# and more. It can help you in three ways:
+\begin{enumerate}
+	\item It can generate an on-line documentation browser (in HTML) and/or an off-line reference manual (in $\mbox{\LaTeX}$) from a set of documented source files. There is also support for generating output in RTF (MS-Word), PostScript, hyperlinked PDF, compressed HTML, and Unix man pages. The documentation is extracted directly from the sources, which makes it much easier to keep the documentation consistent with the source code.
+	\item You can configure doxygen to extract the code structure from undocumented source files. This is very useful to quickly find your way in large source distributions. You can also visualize the relations between the various elements by means of include dependency graphs, inheritance diagrams, and collaboration diagrams, which are all generated automatically.
+	\item You can even abuse doxygen for creating normal documentation.
+\end{enumerate}
+
+
+
+\subsection{Installation}
+On Windows, you can download the executable at \\
+\url{http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc} \\
+On Ubuntu, you can install it by typing the command line:
+\begin{verbatim}
+	sudo apt-get install doxygen doxygen-doc
+\end{verbatim}
+In order to apply doxygen, you have to use a configuration file. You find it in the \texttt{src} folder on the \textit{mercurial} file tree.
+\begin{verbatim}
+	doxygen Doxyfile codeFile
+\end{verbatim}
+The best way to do is to link all files inside the root file (localized on \texttt{src}) and to execute doxygen on this main file. It will produce global html file summarizing the whole code. In fact, the last command generates two folders where the \textit{Doxygen} is launched. The \textit{html} folder contains the \textit{html} pages, you can access to them by:
+\begin{verbatim}
+	firefox html/index.html
+\end{verbatim}
+The \textit{latex} folder contains the \TeX file. To create the PDF file:
+\begin{verbatim}
+	cd latex
+	pdflatex refman.tex && pdflatex refman.tex
+\end{verbatim}
+
+
+
+\subsection{Python comments}
+There are two different ways to comment a \textit{Python} code. For a single line the \verb|#| is necessary.
+\begin{verbatim}
+	# a simple comment
+\end{verbatim}
+For a multi-line comment you have to use triple quotes \verb|"""|:
+\begin{verbatim}
+	"""
+	    a multi-line comment
+	    with a lot of explainations
+	    inside
+	"""
+\end{verbatim}
+This kind of comment is also called \textit{docstring}.\\
+\\
+The next code is a template of a \textit{Python} class (available on the \textit{mercurial} server at \texttt{usr/documentation/doxygen/Python/PyClassExample.py}). 
+\verbatiminput{doxygen/Python/PyClassExample.py}
+Note that the first line indiquates which version of \textit{Python} will be used and the second one refers to the encoding \textit{utf-8}. The single  and the multi-line comments are mixed. A particularity of the three quote comments are we can get them by the command \verb|__doc__|:
+\begin{verbatim}
+	ipython PyClassExample.py
+	In [1]: p = PyClassExample()
+	In [2]: p.__doc__
+	Out[2]: ' docstring of the class '
+	In [3]: p.__init__.__doc__
+	Out[3]: ' docstring of the constructor '
+\end{verbatim}
+
+
+
+
+
+\subsection{C/C++ comments}
+
+
+\chapter{Standard coding\label{Standard coding}}
+Respecting a strict standard of coding (indentation, syntax of variables, classes etc.) allows to a programmer to read some code that she/he have not developed. This feeling of \textit{déjà-vu} facilitate the modification, the maintenance and the management of it. We adopt these conventions:
+\begin{description}
+	\item[Module name]	\texttt{publicModuleName} and \texttt{\_\_privateModuleName}\\
+	\verb#module-rgx=(__)?[A-Z][a-zA-Z0-9]{1,30}$#
+	\item[Constant name]	\texttt{CONSTANT\_NAME}\\
+	\verb#const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$#
+	\item[Class name]	\texttt{PublicClassName} and \texttt{\_\_PrivateClassName}\\
+	\verb#class-rgx=(__)?[A-Z][a-zA-Z0-9]{1,30}$#
+	\item[Function name]	\texttt{publicFunctionName} and \texttt{\_\_privateFunctionName}\\
+	\verb#function-rgx=(__)?[a-z][a-z0-9]{1,30}$#
+	\item[Method name]	\texttt{publicMethodName}, \texttt{\_\_privateMethodName} and \texttt{\_\_systemMethodName\_\_}\\
+	\verb#method-rgx=(__)?[a-z][A-Za-z]{1,30}$|__[a-z][A-Za-z]{1,30}__$#
+	\item[Attribute name]	\texttt{publicAttributeName} and \texttt{\_\_privateAttributeName}\\
+	\verb#attr-rgx=(__)?[a-z][A-Za-z]{1,30}#
+	\item[Argument name]	\texttt{argumentName}\\
+	\verb#argument-rgx=[a-z][a-z0-9]{1,30}$#
+\end{description}
+
+
+\section{Python}
+\subsection{PEP 008 formatting}
+The \textit{Python} formating follows the \textit{PEP 008} convention\footnote{\url{http://www.python.org/dev/peps/pep-0008/}}. One of Guido's key insights is that code is read much more often than it is written. The guidelines provided here are intended to improve the readability of code and make it consistent across the wide spectrum of \textit{Python} code. In brief, ''Readability counts''.\\
+\\
+A style guide is about consistency. Consistency with this style guide is important. Consistency within a project is more important. Consistency within one module or function is most important.\\
+\\
+We customize it by adding the above rules. The program \texttt{pylint}\footnote{\url{http://www.logilab.org/project/pylint}} verifies if the python file is well formated.
+
+\subsection{Pylint}
+On Windows, go to the web page and follow the instructions:\\
+\url{http://thinkhole.org/wp/2006/01/16/installing-pylint-on-windows/}\\
+On Ubuntu, install pylint by type the command line:
+\begin{verbatim}
+	sudo apt-get install pylint
+\end{verbatim}
+In order to apply \texttt{pylint} on your code write the command line:
+\begin{verbatim}
+	pylint --rcfile pylintrc PyClassExample.py
+\end{verbatim}
+where \texttt{pylintrc} is the configuration file. You find it in the \texttt{src} folder on the \textit{mercurial} tree. The statistic report of \texttt{pylint} is exhausive. You obtain the detail of one error by typing the following command (in this example, we assume that the error is \texttt{C0111}):
+\begin{verbatim}
+	pylint --help-msg=C0111
+\end{verbatim}
+The rapport is summarized if you use the option \texttt{--reports=n}.
+\begin{verbatim}
+	pylint --reports=n --rcfile pylintrc PyClassExample.py
+\end{verbatim}
+The lines of the errors are mentionned with the corresponding message.
+
+
+\section{C/C++}
+\subsection{GNU formating}
+% indent
+\subsection{BCPP}
+
+
+\end{document}

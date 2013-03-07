@@ -1,0 +1,24 @@
+7 MAY 2011
+Added script to calibrate the obstacle detector on the kinect-nav from the brain laptop.
+Should it be in this folder?
+Rik
+
+6 MAY 2011
+Renamed files moved them from the /tools/ folder to the scripts folder.
+Added script that starts the communicator on all laptops + the pioneer controller.
+Modified write_hosts.sh to check if the hosts file was already updated.
+Added write_hosts.sh to the robocup install script.
+Fixed bug inside the robocup-install.sh
+Added proper way of running the kinect on any laptop without sudo permissions.
+
+4 MAY 2011
+Changed wakeup.sh to accept arguments.
+If you specify wakeup.sh brain it will only wake up that laptop.
+if no argument is given, then it just starts up all laptops.
+
+27 apr 2011
+Commented out VNC install stuff from robocup_install.sh
+Added status.sh - Checks if all hosts are up (laptops+nao+pioneer)
+Changed wakeup.sh and shutdown.sh to run status.sh at the end.
+Added battery.sh - Checks power level of battery (not considering initial factory capacity but the real one)
+

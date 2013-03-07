@@ -1,0 +1,124 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= black,
+	linkcolor= black,
+    citecolor= black,
+}
+
+\lstset{language=c, frame=lines, basicstyle=\tt, tabsize=4, numberstyle=\tt}
+
+
+\title{HOWTO - Start with the (New!) ColorBlob Detector \\ \small{Related courses: Robotica, PAS1 and PAS2}}
+\author{Team BORG}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This document introduces you to the \textbf{(New!)} ColorBlob detector module.
+
+\textbf{Please note that this document is a work in progress and may be updated in time.}
+
+\section{Installation}
+
+\begin{enumerate}
+    \item Install python and opencv on a linux box:
+\begin{lstlisting}
+# sudo apt-get update
+# sudo apt-get install python python-opencv 
+\end{lstlisting}
+    \item Use Python \lstinline{pip} or install manually if the above does not work.
+\end{enumerate}
+
+\section{Module Configuration}
+
+An example configuration if shown below (should be on one line):
+\begin{lstlisting}
+    blobdetect = blobdetector_new  video_source=webcam trainable=True 
+        targets=vision/colorblob/targets.pkl denoise_value=5 frequency=10
+\end{lstlisting}
+
+The following configuration parameters are specific for the blobdetector module:
+\begin{enumerate}
+    \item[\textbf{targets}:] The file as generated with the ``\lstinline{target_color_generate.py}'' script (see section \ref{sec:training}).
+    \item[\textbf{denoise\_value}:] The amount of denoising required (0 = no denoise).
+    \item[\textbf{frequency}:] The frequency of the module. The higher the frequency, the more observations are send to memory.
+\end{enumerate}
+
+In case of the Nao camera, you can use the following (should be on one line):
+\begin{lstlisting}
+    blobdetect = blobdetector_new  nao=<nao_ip> inputres=160x120 outputres=160x120 
+        video_source=naovideo camera=1 trainable=True 
+        targets=vision/colorblob/targets.pkl denoise_value=5 frequency=10
+\end{lstlisting}
+
+Set the camera value to 0 to use the upper camera, 1 to use the lower camera.
+
+\section{Basic Training Procedure}
+\label{sec:training}
+
+First specify the colors to use using the ``\lstinline{target_color_generate.py}'' script\footnote{Choose 0 cubes if you do not want to train the module manually.}:
+\begin{lstlisting}
+# cd $BORG/brain/src
+# python vision/colorblob/target_color_generator.py}
+\end{lstlisting}
+
+Once the colors are specified, you can train the module by setting the ``trainable'' configuration parameter to ``True'' and running it as shown in the ``example\_blobdetector'' behavior and configuration file.
+
+\subsection{Keyboard/Mouse Shortcuts}
+
+Once the module is running, you can cycle over all colors and train them using the following key and mouse shortcuts:
+
+\begin{enumerate}
+    \item[\textbf{Left-Mclk}:] Adds a new color cube for the selected color.
+    \item[\textbf{Right-Mclk}:] Select the next colorblob.
+    \item[\textbf{Mid-Mclk}:] Increases the size of the bounding box to sample the colors from.
+    \item[\textbf{Shift Left-Mclk}:] Increases the Hue wideing.
+    \item[\textbf{Ctrl Left-Mclk}:] Decreases the Hue wideing.
+    \item[\textbf{Shift Mid-Mclk}:] Increases the Saturation wideing.
+    \item[\textbf{Ctrl Mid-Mclk}:] Decreases the Saturation wideing.
+    \item[\textbf{Shift Right-Mclk}:] Increases the Value wideing.
+    \item[\textbf{Ctrl Right-Mclk}:] Decreases the Value wideing.
+    \item[\textbf{Alt Left-Mclk}:] Saves the new configuration in the file specified in the configuration file.
+\end{enumerate}
+
+\section{Basic Usage (in Behavior)}
+
+Once trained (see section \ref{sec:training}), you can retreive the detected observations in memory.
+The topic corresponds to the names specified with the ``\lstinline{vision/colorblob/target_color_generator.py}'' script.
+
+Each observation has the following fields:
+\begin{enumerate}
+    \item[\textbf{``width''}:] The width of the blob.
+    \item[\textbf{``height''}:] The width of the blob.
+    \item[\textbf{``x''}:] The X location of the upper left corner.
+    \item[\textbf{``y''}:] The Y location of the upper left corner.
+    \item[\textbf{``surface''}:] The area of the blob.
+\end{enumerate}
+
+\section{Training From a Behavior}
+
+TODO
+
+\section{Example Usage}
+
+See the ``example\_blobdetector'' behavior and configuration file for more information.
+
+\end{document}
+

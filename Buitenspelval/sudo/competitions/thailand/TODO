@@ -1,0 +1,116 @@
+
+
+%. = To be done, F = Finished, I = In process, P = postponed
+
+--- Misc ---
+
+[I] Prepare list of hardware to bring with us
+[.] Setup local repo (internet might be bad)
+[.] Test new wifi interface for robot
+[I] Buy tie-wraps, ducktape, isolation tape, emergency buttons
+[F] Buy additional Serial to USB connector -> Using BORG's FTDI converter
+
+--- Hardware ---
+
+[F] Fixed 3 extra dual-core laptops for Marko & Joost & Amir
+
+[.] Robot
+    [F] Power (batteries, (soldering) connectors, fuses, switches, etc.)
+    [I] Emergency buttons
+    [F] Table (saw poles, etc.)
+    [.] Mount and test sensors (Microphone, Kinects etc.)
+    [.] Casing (cover body, wires etc.)
+    [F] Microphone
+    [F] Laser
+    [F] Poles for camera's
+    [P] Fix/test linear actuator
+    [P] Feedback sensor for linear actuator
+    [P] Levitation mechanism
+
+--- Software ---
+
+[I] Move navigation/gui/predator to new repo -> untested!
+[F] GMapping Navigation with Kinect
+[I] BodyController (interface) for new Mobile Platform controller
+[F] Odometry for MObile Platform controller
+[I] Other modules (Facerecog/haarface/objectdetect/blob/speech/etc.)
+
+--- Tests ---
+(See rulebook for more details.)
+
+[.] 1.1 - RIPS (full)
+    [.] Poster Session
+        [.] Modify poster
+        [.] Print poster at repro (!)
+    [.] Enter door and approach registration desk
+    [.] Introduction/registration behavior
+    [.] Leave the room
+        [.] Test emergency button
+        [.] Navigate back to exit door
+
+[.] 1.2 - Follow Me (at least ITP1)
+    [.] ITP1: Get basic predator following working
+        [.] Verification if person is actually in front of robot (?)
+    [.] ITP1: Filter misclassifications by narrowing depth/angle focus 
+    [.] ITP1: Investigate Paul's segmentizer; nopredatorsegment (?)
+    [.] ITP1: Incooperate blobdetector (?)
+    [.] ITP2: Enter/exit elavator behavior
+    [.] ITP1/2/3: Panic mode; basic search behavior if person is lost after x seconds
+
+[P] 1.3 - Clean Up (postponed, currently too risky)
+    (Only worth investigating if navigation and object recognition works flawlessly.)
+
+[.] 1.4 - Who Is Who (at least the intro + receiving order)
+    [I] Receive guests (!)
+    [.] Go to correct room 
+        (Can be hard-coded I think if navigation is not working.)
+    [P] Searching for calling person (too difficult, skip)
+    [.] Receiving and repeating order
+    [.] Navigating to pickup room (where the drinks are)
+    [P] Grasping drinks (too difficult, skip)
+    [I] Searching and recognizing guests
+    [.] Option 1: Get all drinks and deliver them all at once (requires tray).
+    [.] Option 2: Get and bring drinks one by one (time consuming?)
+    [.] Make the robot move to the exit 30s (or so) before time limit expires (100 points)
+
+[.] 1.5 - Technical Challenge
+    (Not part of the main competition.)
+    [.] Aproaching table
+    [.] Activily searching for known objects 
+    [.] Presenting found objects on screen 
+    [P] Pointing to found object
+
+[.] 1.6 - Open Challenge
+    (Also see Demo Challenge and Finals, the teamleader during the demonstrations of OC.)
+    [.] Prepare max. 2 slides
+    [.] Prepare handouts for other teams
+    [.] Prepare actual demo (similar to DC and Finals, but should be a bit different).
+
+[.] 2.1 - GPSR
+    (Category II seems to be the best option to take, go for cat I if it is too difficult.) 
+    (See GPSR grammar and behavior in HG repo made by Bas.)
+    [.] Good HRI (grammar, question/answer, repeating command etc.)
+    [.] Navigating to correct room
+    [.] Recognizing object and asking person to give it
+    [.] Navigating back to the operator
+    (?) Can we skip the grasping part?
+
+[.] 2.2 - Restaurant
+    [.] Guiding phase (simplified follow me)
+    [.] Reaching locations
+    [.] Asking operator to hand over object
+    (?) Can we skip the grasping part?
+
+[.] 2.3 - Demo Challenge
+    (Also see Open Challenge and Finals.)
+    [.] Prepare pitch (1 minute)
+    [.] Prepare demo (depends on results of OC) 
+
+[.] Finals
+    (Also see Open Challenge and Demo Challenge.)
+    [.] Option 1: GPSR including extra commands such as Follow Me etc.
+    [.] Prepare demo (depends on results of OC and DC) 
+
+
+
+

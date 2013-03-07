@@ -1,0 +1,113 @@
+\documentclass[a4paper, 10pt, oneside]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.pdf, .png}
+\usepackage{verbatim}
+\usepackage{hyperref}
+
+\usepackage{listings}
+
+
+\title{Logging facilities}
+\author{Egbert van der Wal}
+\begin{document}
+\maketitle
+
+\section{Usage}
+In all classes I altered, I added the logger initializer in the constructor. This means that from anywhere in the class, you can do any of:
+
+\begin{lstlisting}
+self.logger.debug("My debug message")
+self.logger.info("My information message")
+self.logger.warning("My warning")
+self.logger.error("My error message")
+self.logger.critical("My critical error message")
+\end{lstlisting}
+
+There were a couple of files with no class (are they used?), but with just functions. To those files, I added a global variable named logger, so from within those functions you can do:
+
+\begin{lstlisting}
+logger.debug("My debug message")
+\end{lstlisting}
+
+and so on.
+
+
+If you use this, please try to use the appriopriate log-level:
+\begin{itemize}
+\item Debug is for extreme verbosity only, you can, for example, dump bits of the content of the memory with this.
+\item Info is for more meaningful messages, still not required for normal functioning.
+\item Warning is when you detect things go some way they shouldn't but the code is trying to work around it.
+\item Error is for messages when the code encounters a problem and cannot work around it, and thus aborts, while the program can remain running, possibly with decreased functionality
+\item Critical is for problems that require immediate termination of the program.
+\end{itemize}
+
+
+\section{DIY}
+Because it's quicker and more comprehensible to give an example, I'll just post a small class that does everything it needs.
+
+\begin{lstlisting}
+# -----------------------------------------
+import logging
+import util.nullhandler
+
+logging.getLogger('Borg.Brain.LogExample'). \
+    addHandler(util.nullhandler.NullHander())
+
+class LogExample(object):
+    def __init__(self):
+        self.logger = logging.getLogger('Borg.Brain.LogExample')
+
+    def exampleFunction(self):
+        self.logger.info("Here is my warning message")
+# -----------------------------------------
+\end{lstlisting}
+
+
+\section{Enabling Output}
+You see the name of the logger in the example above as: Borg.Brain.LogExample.
+The name is hierarchical where the parts are separated by dots. Using this
+hierarchy, you can enable or disable logging for smaller or larger parts at
+once, or change the logging level for smaller or larger parts at once.\\
+
+When you want to get output from a specific module, you use this code IN YOUR
+MAIN FUNCTION. Do not touch the line adding the NullHandler from the example
+above (the 3rd line with code). Use the following code somewhere before you
+expect logging output. This will enable logging for the entire brain. \\
+
+\begin{lstlisting}
+logging.getLogger('Borg.Brain'). \
+    addHandler(util.loggingextra.ScreenOutput())
+logging.getLogger('Borg.Brain').setLevel(logging.DEBUG)
+\end{lstlisting}
+
+Don't forget to import logging and util.loggingextra!
+
+\section{Logging in base behaviors}
+Because the same code is used for all base behaviors, they all use the same
+logger name, Borg.Brian.Behavior. You can change this if you want and if it's
+necessary.
+
+\section{Command Line Options}
+The brain.py accept logging options. You can use --log-name to specify what to
+log, --log-level to specify the log level (DEBUG, INFO, WARNING, ERROR,
+CRITICAL), --log-format to specify the logging format (although you shouldn't
+usually need this) and --log-file to specify a file to log to instead of the
+standard output. Here are a couple of examples: \\
+
+\begin{lstlisting}
+./start.sh --log-name=Borg.Brain.Behavior --log-level=DEBUG 
+\end{lstlisting}
+to enable output of all messages of the Behaviors.\\
+\\
+Another option is to specify a target file:\\
+\begin{lstlisting}
+./start.sh --log-name="Borg.Brain.Behavior" --log-level=DEBUG \
+    --log-file=brain.log
+\end{lstlisting}
+
+\section{Online manual}
+See: http://docs.python.org/library/logging.html for more information on the logging facilities.
+\end{document}
+

@@ -1,0 +1,383 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= black,
+	linkcolor= black,
+    citecolor= black,
+}
+
+\lstset{language=c, frame=lines, basicstyle=\tt, tabsize=4, numberstyle=\tt}
+
+
+\title{HOWTO - Start with the Architecture \\ \small{Related courses: Robotica, PAS1 and PAS2}}
+\author{Team BORG}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This document introduces you to the BORG architecture and lets you get started with your first behavior tree using the Nao.
+Please also have a look at the ``System Architecture'' presentation for a short overview.
+Refer to the ``Howto Repository'' document for more information on getting access the the software\footnote{This might not be required for the PAS course; download the tar.gz from the PAS website.}.
+It is recommended to first read section \ref{sec:nao} if you are following the PAS course.
+
+\textbf{Please note that this document is a work in progress and will be updated in time.}
+
+\section{Preparation}
+\label{sec:preparation}
+
+\begin{enumerate}
+    \item Make sure you cloned the repository (see the document ``HOWTO - Use the repository'')\footnote{Or download and unpack the \lstinline{borg_src_**-**-**.zip/tar.gz} from: \url{http://www.ai.rug.nl/crl/uploads}}. 
+    \item Make sure the following lines are added to your \lstinline{.bashrc} file (located in your home\footnote{By default ``/home/student'' for the PAS course.} directory):
+\begin{lstlisting}
+export BORG=$HOME/sudo
+export PYTHONPATH=/opt/choregraphe/lib:$PYTHONPATH
+export PYTHONPATH=$BORG/brain/src:$PYTHONPATH
+export LD_LIBRARY_PATH=/opt/choregraphe/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$BORG/brain/src/util
+\end{lstlisting}
+    The variable \lstinline{BORG} should refer to the location of the root directory of the (cloned) repository.
+    \item Also add the following line to your \lstinline{.bashrc} file in case you are working on the AI systems (using your own AI account):
+\begin{lstlisting}
+source /home/student/vakken/Robotica/sdk/set_env_vars
+\end{lstlisting}
+    \item Also, if you are experiencing errors related to missing python libraries, try adding the following \lstinline{PYTHONPATH} to your \lstinline{.bashrc} file:
+\begin{lstlisting}
+export PYTHONPATH=$BORG/brain/src:$PYTHONPATH
+\end{lstlisting}
+\end{enumerate}
+
+\section{Installation of Dependencies}
+
+If you are \textit{not} using the standard AI or Ubuntu systems in the lab, you need to install a lot of libraries yourself.
+The following instructions may be incomplete, deprecated, not work on your system, or you are required to use different packages or versions.
+
+\begin{enumerate}
+    \item Follow the instructions as indicated in section \ref{sec:preparation}.
+    \item Follow the instructions as indicated in section \ref{sec:nao}.
+    \item Add the ``lib'' directory of the choregraphe package to your \lstinline{PYTHONPATH} and \lstinline{LD_LIBRARY_PATH}:
+    \begin{enumerate}
+        \item Open your ``\lstinline{~/.bashrc}'' file.
+        \item Add the following at the end (modify the path) (should be on one line!):
+\begin{lstlisting}
+export PYTHONPATH=/home/ron/doc/rug/choregraphe-suite-1.12.5-linux64/
+lib:$PYTHONPATH
+\end{lstlisting}
+        \item Add the following at the end (modify the path) (should be on one line!):
+\begin{lstlisting}
+export LD_LIBRARY_PATH=/home/ron/doc/rug/choregraphe-suite-1.12.5-linux64/
+lib:$LD_LIBRARY_PATH
+\end{lstlisting}
+        \item Reload it for every terminal that you have already opened (or just restart the terminal):
+\begin{lstlisting}
+# source ~/.bashrc
+\end{lstlisting}
+    \end{enumerate}
+    \item Install specific python libraries:
+\begin{lstlisting}
+# sudo apt-get install python-scipy python-pygame python-cv
+\end{lstlisting}
+    \item For using the pioneer, install Aria: \\
+        \url{http://robots.mobilerobots.com/wiki/ARIA}
+        (Simply download/unpack the ``*.tgz'' and execute \lstinline{sudo make install}.)
+    \item You can find and install remaining dependencies as follows (for Ubuntu or Debian):
+    \begin{enumerate}
+        \item Search for packages:
+\begin{lstlisting}
+# apt-cache search <word_1> <word_2> <etc.>
+\end{lstlisting}
+        \item Install packages, type;
+\begin{lstlisting}
+# sudo apt-get install <package_name>
+\end{lstlisting}
+        \item or you can use the GUI to install packages:
+\begin{lstlisting}
+# synaptic
+\end{lstlisting}
+    \end{enumerate}
+\end{enumerate}
+
+\section{Starting the architecture}
+
+You can start the architecture (including the brain, communicators and modules) either by using the \lstinline{start.sh} or the \lstinline{startGUI.sh} script.
+
+\subsection{Using the commandline}
+
+The following instructions will make you start up the system (the example behavior and example vision module) from scratch.
+This is recommended to do so first, so you know what is actually happening on the background.
+
+\begin{enumerate}
+    \item Make sure to generate all behaviors if you haven't does so already:
+\begin{lstlisting}
+# cd $BORG/brain/src/
+# python basebehavior/generate_behaviors.py
+\end{lstlisting}
+    \item Start the communicator in another terminal on each system (for the PAS course you only need to start it once)\footnote{The communicator is used on each system to automatically start or stop vision modules such as the blob detector.}:
+\begin{lstlisting}
+# cd $BORG/brain/src/
+# python communicator/communicator.py
+\end{lstlisting}
+    \item Start the motionController on port 12345 (\textit{not} required for the PAS course)\footnote{The motionController is used to control the pioneer mobile platform. You might first need to build an actual working controller by executing the ``make'' command in the \lstinline{$BORG/brain/src/pioneercontrol/pioneercontroller/} directory.}:
+\begin{lstlisting}
+# cd $BORG/brain/src/pioneercontrol/pioneercontroller/
+# ./motionController 12345
+\end{lstlisting}
+    \item Navigate to the \lstinline{brain/src/} directory and start the architecture using the \lstinline{start.sh} script:
+\begin{lstlisting}
+# cd $BORG/brain/src/
+# LAPTOPS="none" ./start.sh config/config_example
+\end{lstlisting}
+        By setting ``\lstinline{LAPTOPS="none"}'' you force the system to not start anything automatically.
+    \item If everything is working correctly, you should now see that the different example behaviors are run in sequence together with the dummy example module.
+    \item Press Ctrl-C to shutdown the BORG system in the same terminal in which you started the ``\lstinline{start.sh}'' file.
+    \item To be sure that everything is shutdown, you may want to use the following command:
+\begin{lstlisting}
+killall python -9
+\end{lstlisting}
+    \item And if you are also using speech recognition:
+\begin{lstlisting}
+killall python -9 || killall java -9
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Using the GUI}
+
+\begin{enumerate}
+    \item Navigate to the \lstinline{brain/src/} directory.
+    \item Start the GUI tool using the \lstinline{startGUI.sh} script:
+\begin{lstlisting}
+# ./startGUI.sh
+\end{lstlisting}
+    \item Open the configuration window by click on the ``Setup'' option.
+    \item Specify the configuration file to use under ``Configuration File''.
+    \item Specify whether or not you are using the nao and/or the pioneer.
+    \item Save the option by pressing ``Ok'' (the options will be saved once you closed the GUI).
+    \item Start the brain (and thus the behaviors, and possibly the communicators and related modules) by pressing the ``Start Brain'' button.
+\end{enumerate}
+
+
+
+
+\section{Main Configuration File}
+\label{sec:config}
+
+An example configuration called ``\lstinline{config_example}'' is located under ``\lstinline{brain/src/config}''.
+
+\begin{enumerate}
+    \item At the top, the starting behavior and its arguments (a dictionary) can be specified, for example:
+\begin{lstlisting}
+[general]
+starting_behavior = balltrack({})
+\end{lstlisting}
+        Please refer to the ``Behavior Architecture'' document for more information on passing arguments to behaviors.
+    \item Specify under \lstinline{[body]} the number of robots for each type (e.d. Nao, Pioneer, Quadcopter) and its IP address and port number.
+    \item Perception/vision modules to use and their arguments can be specified under \lstinline{modules_settings} under section \lstinline{vision_controller}, for example: 
+\begin{lstlisting}
+modules_settings:
+    obstacledetectormodule = obstacledetector video_source=kinect
+\end{lstlisting}
+        The first part specifies the name of the instance, the second (after \lstinline{=}) the name of the module and the remainder is used to specify the arguments.
+    \item After specifing the (instances of the) modules, one can specify on what host the instance has to run, for example:
+\begin{lstlisting}
+modules:
+    localhost = obstacledetectormodule
+\end{lstlisting}
+        In this case module the instance \lstinline{obstacledetectormodule} is run on the same host as the Brain (e.d. \lstinline{localhost}).
+\end{enumerate}
+
+Please refer to the document ``The Vision Controller'' for more information about the vision controller, communicators, modules and its configuration.
+
+\section{The Behavior Architecture}
+
+Please refer to the document ``Behavior Architecture'' for more information.
+
+\subsection{Creating a (first) behavior}
+
+Follow the following guidelines to create a (first) behavior:
+
+\begin{enumerate}
+    \item Edit ``src/config/behaviors\_config'' and add a new behavior (for example ``my\_new\_behavior''). 
+        Also, define the post condition (simply specify ``False'' if you do not care) and possibly exceptions (not mandatory).
+    \item Generate all behaviors using the \textbf{``python basebehavior/generate\_behaviors.py''} command.
+    \item Copy the generated template ``behaviors/my\_new\_behavior/my\_new\_behavior\_x.py'' to 
+        \\ ``behaviors/my\_new\_behavior/my\_new\_behavior\_0.py''.
+    \item Edit the new file and add your sub-behaviors (and its preconditions) in the \textbf{implementation\_init()} function.
+    \item Add the actual behavior code to the \textbf{implementation\_update()} function.
+    \item Create your own config file in the ``src/config'' directory.
+\end{enumerate}
+
+\subsection{A more complex behavior tree}
+
+Follow the following guidelines to create a more complex behavior tree:
+
+\begin{enumerate}
+    \item Define the hardware that you require (Nao, Pioneer, etc.)
+    \item Define the sensors that you require (e.d. Kinect, Webcam, Laser Range Finder, etc.).
+    \item Define the computers and its modules that you are going to use (obstacle avoidance, object recognizers, etc.). 
+        Have a look in the \lstinline{vision} directory for all available modules.
+    \item Create all behaviors (low-leven, high-level). 
+    \item Create a new configuration file and add all relevant information.
+\end{enumerate}
+
+Low-level behaviors generally contain more code in the \lstinline{implementation_update} function (controlling specific movements and such of the robot).
+More high-level behaviors contain more code in the \lstinline{implementation_init} function; stating the the subbehaviors it uses and its preconditions.
+
+Keep in mind that all update functions (e.d. your implementation of the \lstinline{implementation_update} function), are run in sequence with the (maximum) frequency as specified in the main configuration file.
+So if one of those update functions block (for example, by a call to the \lstinline{time.sleep()} function), the whole behavior tree stalls.
+
+\section{Using the Memory}
+
+The singleton memory module is used to communication and store information between behaviors and modules. 
+Please refer to the ``The Memory'' for more information.
+
+\section{Logging Facilities}
+
+It is recommended to use the internal logging facilities of the architecture.
+This allows you to either increase or decrease the verbosity of the system without having to comment or uncomment print statements.
+Please refer to the ``Logging Facilities'' document for more information.
+
+\section{The Nao (and related software)}
+\label{sec:nao}
+
+\subsection{Using the Nao}
+
+Please adhere the following guidelines:
+\begin{enumerate}
+    \item \textbf{\large{You should always be prepared to catch the robot!}}
+    \item Deenslave the robot if you are not using it temporarly (this prevents the motors from heating up).
+    \item Turn of the robot if you are not using it (this prevents the CPU from heating up).
+    \item Always put the robot back in the correct box together with the power supply.
+\end{enumerate}
+
+\subsection{Choregraphe}
+
+\subsubsection{AI Systems}
+\label{choregraphe_ai_systems}
+
+On the AI systems, you can start Choregraphe simply by typing \lstinline{choregraphe} in the command line.
+If this does not work, you can try to run Choregraphe using one of the binaries located under \lstinline{/home/student/vakken/Robotica/sdk}, for example:
+\begin{lstlisting}
+# /home/student/vakken/Robotica/choregraphe-suite-1.12/bin/choregraphe-bin
+\end{lstlisting}
+
+If your are having trouble finding NaoQi, you can also try to add one of the labraries paths under \lstinline{/home/student/vakken/Robotica/sdk} in your \lstinline{.bashrc} file, for example:
+\begin{lstlisting}
+export PYTHONPATH=/home/student/vakken/Robotica/choregraphe-suite-1.12/lib:$PYTHONPATH
+\end{lstlisting}
+
+\subsubsection{On your own computer}
+
+You can run Choregraphe on your own computer by downloading it from Aldebaran users website (see section \ref{nao_resources}).
+Simply download the archive, unpack it and set \lstinline{PATH} and \lstinline{PYTHONPATH} in a similar as been specified in section \ref{choregraphe_ai_systems}
+
+For more information on using choregraphe: \\
+\url{http://www.aldebaran-robotics.com/documentation/index.html}
+
+
+
+\subsection{Accessing the Python SDK}
+
+You can use the buildin ``\lstinline{src/body/nao.py}'' module in the BORG system to access the Nao Python SDK\footnote{See for more information: \url{http://www.aldebaran-robotics.com/documentation/dev/python/index.html}}.
+
+In order to control the Nao robot within a behavior, make sure to:
+\begin{enumerate}
+    \item Specify the amount of Nao robots to use and their IP addresses in your config file (see section \ref{sec:config}).
+    \item Now you can access each Nao robot using the \lstinline{nao(...)} function:
+\begin{lstlisting}
+self.nao = self.body.nao(0)
+\end{lstlisting}
+    \item The standard library as provided by the BORG system has a few standard functionalities such as for example;
+    \begin{enumerate}
+        \item making the robot speak;
+\begin{lstlisting}
+self.body.nao(0).say("Hello everybody!")
+\end{lstlisting}
+        \item making the robot move to a specific location (1, 0.5) with an angle of 0.1 radians while stopping if an object is detected within 25cm;
+\begin{lstlisting}
+self.body.nao(0).moveNav(1, 0.5, 0.1, 0.25):
+\end{lstlisting}
+        \item and making the robot execute a specific choregraphe behavior:
+\begin{lstlisting}
+self.body.nao(0).start_behavior("sitdown")
+\end{lstlisting}
+    \end{enumerate}
+    Please refer to the actual ``\lstinline{src/body/nao.py}'' module for more information.
+\end{enumerate}
+
+To access all functionalities of the Nao robot, you need to communicate with the robot using so called proxies.
+You can access these proxies using the ``\lstinline{get_proxy(...)}'' function.
+For example to retreive the ``ALMotion'' proxy and make the robot move its head up, you can do the following:
+\begin{lstlisting}
+self.body.nao(0).get_proxy("motion").setStiffnesses("Head", 1.0)
+self.body.nao(0).get_proxy("motion").angleInterpolation( \
+        "HeadPitch", 25 * almath.TO_RAD, 1.0, True)
+\end{lstlisting}
+
+Using the ``\lstinline{get_proxy(...)}'' function, you can access the following proxies: ``motion, navigation, tts, video, frame, memory, vision, balltracker, leds''.
+Refer to the link stated above for more information on these proxies.
+
+\subsection{Recording and using your own Choregraphe behaviors}
+
+\begin{enumerate}
+    \item Of course you can create your own behavior in Choregraphe using a subset of the existing behaviors (by tying the up together and saving the project). 
+    \item However, you can also record your own movement using the Animation box: \\
+        \url{http://www.aldebaran-robotics.com/documentation/software/choregraphe/animation_mode.html} \\
+    \item Once you created and saved your project (make sure the final box is fully connected on both ends), you can transfer the behavior to the robot: \\ 
+        \url{http://www.aldebaran-robotics.com/documentation/software/choregraphe/panels/behavior_manager_panel.html?highlight=behavior%20manager}
+    \item You can also use the behavior manager (see previous link) to start and stop all behaviors that are currently located on the robots.
+    \item Once the behavior is transfered to the robot, you can execute it with the BORG architecture from your behavior in the following way:
+\begin{lstlisting}
+self.nao = self.body.nao(0)
+self.nao.start_behavior('introducemyself_bas')
+\end{lstlisting}
+        Have a look in the \lstinline{brain/src/body/nao.py} file for more information.
+\end{enumerate}
+
+Tips and guidelines:
+\begin{enumerate}
+    \item It is generally a good idea to record the movement slowly and then increase its framerate in order to increase its speeds.
+    \item It is also a good idea to split up your recordings in separate boxes. 
+        This will allow you to easily tie them up together and create different behaviors with different speeds without having to record the whole movement over and over again.
+    \item Make sure your final behavior in Choregrahe is connected on both ends (so the program knows when the behavior is supposed to start and end).
+    \item Use existing Choregraphe behaviors to make the nao sit and stand (your can also use the behavior manager for this (see one of the previous links)).
+    \item Only record those parts of the Nao body that you are actually going to use.
+        Otherwise you will record the whole body which may result in improper and dangerous behavior.
+    \item \textbf{Be careful;} if you connect the boxes in Choregraphe in a recurrent way, multiple signals may be created which might result in multiple behaviors being executed. 
+        For more information: \\
+        \url{http://www.aldebaran-robotics.com/documentation/software/choregraphe/tutos/boxes.html?highlight=wait%20signal}
+    \item \textbf{Be careful;} always make sure you execute your behavior from a correct and known position (the robot might otherwise tip over!).
+\end{enumerate}
+
+\subsection{Resources}
+\label{nao_resources}
+
+\begin{enumerate}
+    \item Publicly available documentation: \\
+        \url{http://www.aldebaran-robotics.com/documentation/index.html}
+    \item You can find more resources such as the latest binaries and documentation of the Nao on: \\
+        \url{http://users.aldebaran-robotics.com} \\
+        Username: \lstinline{homerug} \\
+        Password: \lstinline{*******} (Ask for it.)
+\end{enumerate}
+
+\section{Standards}
+
+Please refer to the ``Standards'' document for more information on standards and guidelines related to coding and creating documentation.
+
+\end{document}
+

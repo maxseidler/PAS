@@ -1,0 +1,12 @@
+Door A,Bedroom Door
+Bedroom Door,Bedroom
+Bedroom Door,Laundry Door
+Laundry Door,Laundry
+Laundry Door,Closet
+Closet,Registration Desk
+Registration Desk,Kitchen Door
+Kitchen Door,Kitchen
+Livingroom,Door B
+Registration Desk,Livingroom
+Kitchen Door,Livingroom
+Bedroom Door,Exit C

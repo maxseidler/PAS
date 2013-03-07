@@ -1,0 +1,13 @@
+name,x,y,angle
+Door A,-1500.0,-500,90
+Bedroom Door,-1500,2500,0
+Laundry Door,-1500,5500,0
+Closet,-1500,7000,0
+Registration Desk,-1500,12000,90
+Kitchen Door,-4500,12000,-90
+Livingroom,-4500,13500,0
+Kitchen,-4500,8500,-90
+Door B,-8500,13500,0
+Exit C,1500,1500,180
+Laundry,-5000,5500,0
+Bedroom,-5000,2500,0

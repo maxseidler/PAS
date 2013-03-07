@@ -1,0 +1,226 @@
+% [page size, font size, recto-verso]{style of the document}
+\documentclass[a4paper, 12pt, oneside]{report}
+
+% Encoding of this file. On Linux, all files are UTF8 encoded.
+\usepackage[utf8x]{inputenc}
+
+% To write mathematical formula:
+% \begin{align} ... \end{align}, \begin{equation} ... \end{equation}
+\usepackage{amsmath, amssymb}
+
+% To insert graphics:
+% \includegraphics[options]{path}
+\usepackage{graphicx}
+
+% The allowed type of image files.
+\DeclareGraphicsExtensions{.pdf, .png}
+
+% To include code file without any layout
+% \verbatiminput{path}
+\usepackage{verbatim}
+
+% To include PDF files
+% \includepdf[pages = z,x-y]{path}
+\usepackage{pdfpages}
+
+% To do tables on many pages
+% \begin{longtable}{define the columns} ... \end{longtable}
+\usepackage{longtable}
+
+
+\textwidth=16cm
+\oddsidemargin=0pt
+\evensidemargin=0pt
+
+%% The 3 variables which you must initialize:
+% Title of the document,
+\newcommand{\titleVariable}{Pioneer Controller Documentation}
+% The author(s),
+\newcommand{\authorVariable}{Herke~van~Hoof}
+% The date of the first release.
+\newcommand{\firstRelease}{March 18, 2011}
+
+\usepackage{hyperref}
+% To create all hypertext links for the bibliography, the figures, the bookmarks etc.
+% \url{http://www.thewebsite.org}
+\hypersetup{
+% 	backref=true,
+% 	pagebackref=true,
+% 	hyperindex=true,
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= blue,
+	linkcolor= blue,
+% 	bookmarks=true,
+	bookmarksopen=true,
+	pdftitle={\titleVariable},
+	pdfauthor={\authorVariable},
+	pdfsubject={Documentation}
+}
+
+\title{\titleVariable}
+\author{\authorVariable}
+
+
+\date{\centering First release: \firstRelease \\ Last modification: \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+% To create a table of contents at the beginning of the documentation.
+\tableofcontents
+
+\section{Introduction}
+This documentation aims to describe the structure and buildup of the pioneer
+controller. This is a program intended to run on a pioneer robot. It receives
+and interprets commands send through a Tcp/Ip connection and subsequently
+executes the command. The pioneer controller program was written to allow
+control of the pioneer by programs running at remote machines, regarding of the
+language in which they are written. Specifically, it was created to allow the
+python `robot brain' developed by the `BORG' team of the University of Groningen
+for participation in the international Robocup@home competition to control the
+robot.
+
+\subsection{History}
+An earlier program called the `CursorServer' provided a similar function,
+receiving, interpreting, and executing commands send over a Tcp/Ip connection.
+However, this program aims to provide better control. Also, I've tried to split
+up code as much as possible, allowing for code reuse and flexible improvement
+(allowing one to for instance improve the Tcp/Ip server without having to
+modify, or to have any knowledge of, the subsequent parsing and execution of the
+commands).
+
+\subsection{Quality}
+The pioneer controller has been significantly improved since the initial
+release. It will currently try to keep binding to the proper port instead of
+giving up, it will try to reconnect to the Pioneer Controller instead of
+crashing when the connection is lost, it can handle more than one connection at
+the same time and the error handling has been improved. Still, more improvements
+are always possible. \\
+
+The aim of creating the pioneer controller was to provide a working example of
+all modules it consists of (a Tcp/Ip server, a parser, and the actual motion
+controller), not to create a perfect version of any of these. Therefore, there
+is probably plenty of space for improvement in each of these modules. The
+pioneer controller comes with a set of unit tests, please keep these up to date
+and add tests for new functionality that is added.
+
+\subsection{This document}
+Like the pioneer controller, this document is likely to be imperfect. If you
+spot any errors, please correct them or add additional information as necessary
+(and add your name in the author section if you think your contribution was
+significant). Also if new functionality is added, please describe it in this
+document. The person after you to use this document will be grateful!
+
+\section{Preparation}
+Before being able to run the pioneer controller, the code should be copied to a
+pioneer. Also, any necessary libraries and a compiler need to be available.
+Then, the code can be compiled. Then, the program is ready to be executed. This
+chapter will explain all of these steps.
+
+\subsection{Copying the code}
+Code can be copied to the pioneer using scp:
+
+\begin{verbatim}
+scp -r [folder] [user]@[host]:[location]
+\end{verbatim}
+
+In this command, [folder] is the folder you want to copy (for instance
+`pioneercontroller'), [user] the username on the remote system (for instance
+`root'), [host] is the hostname of the pioneer (for instance `ai178157' for the
+robot labeled pippin), and [location] is the location on the host machine where
+the folder has to be copied to. Leave this blank to copy the source to the home
+directory of the [user]. The example command obtained is:
+
+\begin{verbatim}
+scp -r pioneercontroller root@ai178157:
+\end{verbatim}
+
+Scp will prompt you for the password of [user], and subsequently copy the code
+as requested. If you forget the colon (`:'), the folder contents will be copied
+to a folder called `root@ai178157' in your current local directory, which is not
+what you want.
+
+\subsection{Necessary libraries and compiler}
+Please make sure a compiler is installed. I used \verb=g++= (version 4.1.3),
+other version might or might not work. Also, please make sure the Aria library
+(by MobileRobots inc.) is installed. I used version 2.7.2. For unit testing, the
+`cppunit' library is needed (\url{http://cppunit.sourceforge.net/doc/1.8.0/}).
+
+\subsection{Compiling the code}
+For compiling the code, a `Makefile' is available. The Makefile will more or
+less intelligently try to find the proper location of the libraries and include
+files and should succeed at least on the Pioneer and on the lab computers. If
+you experience problems, feel free to fix them, however, try to avoid hardcoding
+more library locations in the Makefile. Instead, use a better method to find the
+proper locations automatically.
+
+By the way, `make' or `make all' compile both the control program and the tests.
+`make motionController' compiles just the control program, `make
+motionControllerTest' compiles just the tests. `make clean' removes all object
+files and the linked binaries.
+
+\section{Testing and running the program}
+Now the program and the tests are compiled they can be run. If the cppunit
+library is installed in an alternative location, this should be specified when
+running the tests: 
+
+\begin{verbatim}
+LD_LIBRARY_PATH=/root/cppunit/lib/ ./motionControllerTest
+\end{verbatim}
+
+Of course, all tests should succeed. In this case, running the tests should echo
+`OK(2 tests)'.
+
+Running the pioneer controller is easy: `./motionController [portnumber]'. When
+the program is running, it will first wait for an incoming Tcp/Ip connection on
+the specified port, and then try to read from it every fraction of a second.
+Received commands are executed. If no command is received for 0.5 seconds, speed
+of the robot is reset to 0 to prevent accidents. So the control program sending
+the commands should in normal situations send one command every 0.5 seconds or
+more often.
+
+\section{Structure of the source code}
+As mentioned in the introduction, the functionality is divided over three
+classes: the Tcp/Ip server, the parser, and the motion controller. A main
+function used the Tcp/Ip server to receive the next command, which is a string.
+This is done in non-blocking manner, such that if there is no command the server
+returns an empty string and execution of the program can continue (more clearly:
+the server does not wait for a command to arrive).\\
+
+The TCP/IP server accepts several simultaneous connections. Each new connection
+will start in a released state. This means that it cannot currently control the
+robot. It first has to send the command 'enslave' to do so. This will instruct
+the RobotController to connect to the robot. Disconnecting from the robot
+without disconnecting from the server can be done by giving the 'release'
+command. When no clients are in an 'enslaved' state, the RobotController will
+disconnect from the robot. The only command that can be sent in the released
+state is 'status'. This will return some information about the current
+situation: whether there is an active connection to the robot, the current
+odometry and battery levels and the number of connections. \\
+
+Each connection is handled in a separate thread currently. A better approach
+might be to use epoll to handle multiple connection simultaneously, but this
+requires some more work, and as there usually are at most 2 connections to the
+Pioneer at the same, this is not really a problem. \\
+
+The command string is parsed by the parser. Currently, the parser returns a pair
+with as its first member a bool indicating whether the string was successfully
+parsed. If so, the second member is a pair containing the speeds to be set for
+the left and right wheel engines respectively. \\
+
+This command is then executed by the motion controller, interupting any command
+received earlier. However, if no parsable command was received for more than 0.5
+seconds, the control program sending the commands is assumed to be dead. In this
+case, for security the speed of the pioneer is set to 0 for both engines. \\
+
+\subsection{Unit tests}
+At this moment, unit tests are provided for the CommandParser::parseCommand and
+TcpIpServer::receiveMsg functions. The only other function is setSpeeds, which
+can't really be tested as it only provides side effects on the pioneer. All
+tests are implemented in the `tester.cpp' file.
+
+\end{document}

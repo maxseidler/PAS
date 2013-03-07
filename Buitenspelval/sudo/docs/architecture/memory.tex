@@ -1,0 +1,131 @@
+\documentclass[a4paper, 10pt, oneside]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.pdf, .png}
+\usepackage{verbatim}
+\usepackage{hyperref}
+
+\usepackage{listings}
+
+\usepackage{courier}
+
+
+%TODO: dit moet mooier kunnen.....
+\newcommand{\cod}[1]{\emph{#1}}
+
+\title{The memory}
+\begin{document}
+\maketitle
+
+
+%set the font size of the code examples:
+\lstset{ 
+basicstyle=\footnotesize,  
+}
+
+
+\section{Introduction}
+
+This document is about the memory in the Brain of the architecture. Its not about the shared memory etc.
+
+
+\section{The memory class}
+
+The memory class is a singleton, which means that there will only be one memory, no matter how much memory objects you create.
+All behaviors have the memory already accessible via self.m , but in all other classes you can just say:
+
+\begin{lstlisting}
+self.m = memory.Memory()
+\end{lstlisting}
+
+This will get you the current active memory.
+
+\subsection{Adding things to memory}
+
+To add something to the memory, just use the 
+
+\begin{lstlisting}
+self.m.add_item(name, time, properties)
+\end{lstlisting}
+
+The time you can get with time.Time(). The properties are in a dictionary, for example:
+
+\begin{lstlisting}
+properties = {'color': 'green','length': 20}
+\end{lstlisting}
+
+\subsection{Reading things from memory}
+
+The memory remembers all the additions done since it was started. Usually, you only want to get the most recent addition of some object.
+You do that as follows:
+
+\begin{lstlisting}
+m.get_last_observation(name)
+\end{lstlisting}
+
+Where name is the name of the object.
+
+You can also get a list of all the observations:
+
+\begin{lstlisting}
+m.get_observations(name)
+\end{lstlisting}
+
+This will get you a list of all the observations, ordered by time.
+
+Two other useful functions check for an object in combination with its properties: is\_now and was\_ever.
+
+For example
+
+\begin{lstlisting}
+m.is_now('cup', {'color':'red'})
+\end{lstlisting}
+
+checks if we are seeing a red cup.
+
+\begin{lstlisting}
+m.was_ever('location', {'room':'kitchen'})
+\end{lstlisting}
+
+checks if we have ever been in the kitchen. These functions can be used for example in the pre and postconditions of the behaviors.
+
+
+
+
+\section{Vision modules}
+
+Vision modules can register the objects they can possibly recognize via:
+
+\begin{lstlisting}
+m.add_recognizable_objects(modulename,objects)
+\end{lstlisting}
+
+Where objects is just a list of the object names the module can detect. The behaviors can then just check for what kind of objects
+we can currently recognize by using:
+
+\begin{lstlisting}
+m.is_object_recognizable(object)
+\end{lstlisting}
+
+When a module is stopped, it should call:
+
+\begin{lstlisting}
+m.clean_recognizable_objects(modulename)
+\end{lstlisting}
+
+This removes the objects that module can detect from the memory (note that this is completely separate from observations in the memory, those are never removed).
+When multiple modules can recognize the same object, that object remains in the list until all the modules have cleared their objects.
+
+See the ``example'' module for a working example.
+
+\section{Logging}
+
+It is possible to let the memory log everything that it stores, and it is also possible to import a log back to restore an earlier state of memory.
+This is done with the load\_log() function. 
+
+This still needs to be made configurable in the config. When that is done, more information will be added here....
+
+
+
+\end{document}

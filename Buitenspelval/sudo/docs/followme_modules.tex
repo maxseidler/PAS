@@ -1,0 +1,88 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= black,
+	linkcolor= black,
+    citecolor= black,
+}
+
+\lstset{language=c, frame=lines, basicstyle=\tt, tabsize=4, numberstyle=\tt}
+
+
+\title{Follow Me}
+\author{Team BORG}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This document talks about different methods that can be used for person tracking.
+
+\textbf{Please note that this document is a work in progress and may be updated in time.}
+
+At this moment, there are three methods that can be used for following a person.
+
+\begin{enumerate}
+    \item OpenTLD (Predator)
+    \item Region growing segmentization
+    \item Color blob histogram
+\end{document}
+
+\section{OpenTLD Predator and PredatorSegment}
+Our main tracking system is the OpenTLD Predator. The source code and information about the program can be found in the following links. \\
+
+\url{http://info.ee.surrey.ac.uk/Personal/Z.Kalal/tld.html}\\
+\url{https://github.com/zk00006/OpenTLD}\\
+
+We use our own changed version of the programs which is adapted to work with Openni drivers, and BORG architecture.
+The changed version uses the Kinect RGB camera for tracking, and receives the initial bounding box from the \textit{Predatorsegment2.py} module.
+
+The mentioned module is in charge of communication with predator. The tracked results will be sent back to the module. You can find the results in memory by 
+accessing \textbf{predator_obj}. The dictionary consist of index, angle, distance, std, and confidence.
+
+The index is always \verb|'first'|, the angle is the transformed X position of the object in the picture. Distance is the averaged depth of a smaller bounding
+box inside the tracked bounding box. The std is the standard deviation of the distances inside the smaller bounding box. \textbf{Note} that at this moment 
+distance and std always return zero. The reason is that the Openni driver used to crash when we were
+accessing the image from Matlab and python. Therefore, we disabled accessing the depth image from Python. We are working to make it stable.  
+
+To run the system, run matlab (image toolbox required, and it wont work on university student pcs), then head to Predator folder (there are multiple predator
+folder, enter the one without numbers). Finally, run the Run_TLD file. Wait until you see something like:\\
+
+\begin{verbatim}
+ Image node: found
+ Depth node: found
+ IR node: not found
+\end{verbatim}
+
+If the image and depth nodes are found, then you are ok. If not do the following in a linux terminal:
+
+\begin{verbatim}
+ 
+ps aux | grep XnSensor     #This finds the XnSensorServer process that controls the openni and kinect
+kill -9 XXXXX 		#XXXXX is the process number 
+\end{verbatim}
+
+Now you can run the BORG architecture. Take a look at the follow me behavior and all the sub parts. You have to request a module start
+from your behavior.
+
+\section{Region Growing Segmentizer}
+This module uses the region growing technique on depth image to extract blobs. These blobs will be objects in different depths. We usually
+use this as a backup method for Predator. This module can be found in the nopredatorsegman.py file.
+
+\section{Color blob Hisotgram}
+See color blob histogram documentation. It is best to use this module in combination with the region growing segmentizer. 

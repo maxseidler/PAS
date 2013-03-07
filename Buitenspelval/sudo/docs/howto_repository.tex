@@ -1,0 +1,151 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+
+\lstset{language=c, frame=lines, basicstyle=\tt, tabsize=4, numberstyle=\tt}
+
+
+\title{HOWTO Use the repository (Git) \\ \small{Related courses: Robotica, PAS1 and PAS2}}
+\author{Team BORG}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+This document introduces your to the BORG repository.
+Here we assume you are using a UNIX-like system (like GNU/Linux).
+
+For more information on (distributed) revision control:
+\begin{enumerate}
+    \item \url{http://en.wikipedia.org/wiki/Revision\_control}
+    \item \url{http://en.wikipedia.org/wiki/Distributed\_revision\_control}
+\end{enumerate}
+
+\section{Git}
+
+Since November 2012, the BORG team uses Git as the main distributed revision control system.
+
+For more information, see:
+\url{http://git-scm.com/}
+
+\section{Getting Access}
+
+In order to clone the repository (e.d. getting the actual data), you first need to acquire access to it.
+Follow the next instructions to acquire access.
+\begin{enumerate}
+    \item If you haven't already, generate a RSA key (no need to enter a passphrase if asked to do so):
+\begin{lstlisting}
+# ssh-keygen -t rsa
+\end{lstlisting}
+        Use the default options (just hit enter everytime) and make sure to put the private key (\lstinline{id_rsa}) and public key (\lstinline{id_rsa.pub}) under the \lstinline{~/.ssh} directory.
+        Other systems can use your public key to encrypt data and you should use your own private key to decrypt the encrypted data.
+        The reverse holds for the other end, this is all done automatically.
+        \emph{Do not publish your private key, keep it safe!}
+    \item Now \emph{copy} your public rsa key (located under \lstinline{~/.ssh/id_rsa.pub}), rename the \emph{copied} public key to something like \lstinline{<yourname>.pub} and send it to the repository administrator. 
+        Leave the original private and public keys as produced by \lstinline{ssh-keygen} untouched in \lstinline{~/.ssh/}.
+    \item Copy the public and private key to any of your accounts, or send the extra keys that you want to be added as well to the repository administrator (please rename them to something like \lstinline{<yourname_2>.pub}.
+    \item Also, specify your name and email address in your \lstinline{~/.gitconf} file in your home directory (create it if it does not exist), example:
+\begin{lstlisting}
+[user]
+    name = Sint Nicolaas
+    email = sint@kasteel.es
+\end{lstlisting}
+\end{enumerate}
+
+\section{Cloning the repository}
+
+In order use the repository, you need to first clone it.
+To do so, execute the following command:
+\begin{lstlisting}
+# git clone robocup@login.ai.rug.nl:sudo
+\end{lstlisting}
+
+\section{Working with the repository}
+Once you have access to the repository, you can:
+\begin{enumerate}
+    \item Pull and update changes from others:
+\begin{lstlisting}
+# cd <repository directory>
+# git pull
+\end{lstlisting}
+    \item Add and remove files or directories:
+\begin{lstlisting}
+# git add <some_file_or_dir>
+# git rm <some_file_or_dir>
+\end{lstlisting}
+    \item Git does not allow to add empty directories. If you really want to add a directory, you need to add a placeholder, for example:
+\begin{lstlisting}
+# mkdir somedir
+# touch somedir/placeholder
+# git add somedir/placeholder
+\end{lstlisting}
+    \item Before commiting your changes, you need to mark the files first that need to be commited (included in the change):
+\begin{lstlisting}
+# git add <some_file_or_dir>
+\end{lstlisting}
+    \item To add all files \emph{that are and modified} in the underlying directory, you can do the following:
+\begin{lstlisting}
+# git add -u .
+\end{lstlisting}
+    \item Commit changes of your own (once you changed, removed or edited one or more files) (no need to have network access):
+\begin{lstlisting}
+# git commit -m "Some small summary of what you changed."
+\end{lstlisting}
+    \item And finally push the changes to the central repository\footnote{This is only possible if you have write access to the repository. Git is a distributed versioning system which means you can also push the repository to locations other than the one you pulled from. You can for example push changes to or pull changes from your teammembers directly (e.d. \lstinline{git push <location>} or \lstinline{git pull <location>}).}:
+\begin{lstlisting}
+# git push
+\end{lstlisting}
+    %TODO: Entail merge procedures in case of three heads etc.:
+    \item In many cases you will need to ``merge'' two or more versions (for example if two persons made changes to the same file or if your own copy is out of sync) in order to incorporate all changes using the ``merge'' command:
+\begin{lstlisting}
+# git merge
+\end{lstlisting}
+    \item You can lookup changes to the repository by using the log command, for example:
+\begin{lstlisting}
+# git log
+\end{lstlisting}
+\end{enumerate}
+
+\section{Guidelines}
+
+Please adhere the following guidelines while working with the repository:
+\begin{enumerate}
+    \item Before committing files, make sure to first observe the changes you made using the ``status'' command:
+\begin{lstlisting}
+# git status
+\end{lstlisting}
+    \item For more in depth differences of files:
+\begin{lstlisting}
+# git diff
+\end{lstlisting}
+    \item Before pushing any changes to the repository, make sure to run the testrunner first and verify that all tests succeed (this will ensure that you did not break any essential systems while modifying the code):
+\begin{lstlisting}
+# cd brain/src
+# python testrunner.py
+\end{lstlisting}
+    Please report tests that fail by others on the mailinglist.
+    \item Try to pull and push as many times as possible during the day. This will ensure that you keep in sync with others. 
+    \item \emph{If you are doing experimental stuff that involves the core systems; create a new branch.}
+    \item \emph{If you do not know what you are doing; do not push!}
+    \item \emph{(Old) code that is not working, not documented, poorly written or has no unit tests, will be removed in time!}
+\end{enumerate}
+
+\section{More information}
+For more information about Git and it commands (the command is optional), type:
+\begin{lstlisting}
+# git help <command>
+\end{lstlisting}
+or visit;
+\url{http://git-scm.com/}
+
+\end{document}
+

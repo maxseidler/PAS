@@ -1,0 +1,121 @@
+% [page size, font size, recto-verso]{style of the document}
+\documentclass[a4paper, 12pt, oneside]{report}
+
+% Encoding of this file. On Linux, all files are UTF8 encoded.
+\usepackage[utf8x]{inputenc}
+
+% To write mathematical formula:
+% \begin{align} ... \end{align}, \begin{equation} ... \end{equation}
+\usepackage{amsmath, amssymb}
+
+% To insert graphics:
+% \includegraphics[options]{path}
+\usepackage{graphicx}
+
+% The allowed type of image files.
+\DeclareGraphicsExtensions{.pdf, .png}
+
+% To include code file without any layout
+% \verbatiminput{path}
+\usepackage{verbatim}
+
+% To include PDF files
+% \includepdf[pages = z,x-y]{path}
+\usepackage{pdfpages}
+
+% To do tables on many pages
+% \begin{longtable}{define the columns} ... \end{longtable}
+\usepackage{longtable}
+
+
+\textwidth=16cm
+\oddsidemargin=0pt
+\evensidemargin=0pt
+
+%% The 3 variables which you must initialize:
+% Title of the document,
+\newcommand{\titleVariable}{Remote control using a keyboard}
+% The author(s),
+\newcommand{\authorVariable}{Marko Doornbos}
+% The date of the first release.
+\newcommand{\firstRelease}{Nov 26, 2012}
+
+\usepackage{hyperref}
+% To create all hypertext links for the bibliography, the figures, the bookmarks etc.
+% \url{http://www.thewebsite.org}
+\hypersetup{
+%   backref=true,
+%   pagebackref=true,
+%   hyperindex=true,
+    colorlinks=true,
+    breaklinks=true,
+    urlcolor= blue,
+    linkcolor= blue,
+%   bookmarks=true,
+    bookmarksopen=true,
+    pdftitle={\titleVariable},
+    pdfauthor={\authorVariable},
+    pdfsubject={Documentation}
+}
+
+\title{\titleVariable}
+\author{\authorVariable}
+
+
+\date{\centering First release: \firstRelease \\ Last modification: \today}
+
+\begin{document}
+\maketitle
+
+\chapter{the remote module}
+
+This explains how to use the $remote$ module. 
+The module is used to read keyboard presses from a separate window on the executing computer.
+
+\section{Introduction}
+
+The $remote$ module can be found in the $src/vision$ folder. It reads keyboard key presses and writes them to the memory. 
+
+Keep in mind that key presses are only read if the window generated for this purpose is in focus.
+
+\section{How to start}
+
+To have the module running in your behavior, add $remote1 = remote$ to the $modules\_settings:$ part and set it to run on the host you want, probably localhost. 
+
+So like: $localhost = remote1$ in the $modules:$ section of the config file.
+
+\section{How to read from memory}
+
+Entered commands are stored in memory using the $"pioneer\_command"$ key. Use that to retrieve them. 
+
+They are stored as tuple of the time the command was stored and the dict containing the actual data. This is the default format for items in memory.
+
+The following commands can be stored under this key by pressing the corresponding keys on the keyboard: 
+
+\begin{itemize}
+\item{}'w' is "forward"
+\item{}'a' is "left"
+\item{}'d' is "right"
+\item{}'s' is "backward"
+\item{}'q' is "stop"
+\item{}'r' is "terminate"
+\end{itemize}
+
+While these commands are meant to instruct movement, they could be used for other purposes as well. However, it is preferred if that is not done.
+
+\chapter{The remotecontrol behavior}
+
+\section{General information}
+
+This behavior uses the key presses read by the $remote$ module to make the pioneer move.
+
+When making a config to run this behavior, make sure you have a Pioneer and have the $remote$ module running, as described above.
+While running this behavior, the robot will move according to the keypresses as explained above.
+
+Keep in mind that this behavior does not use obstacle avoidance, so BE CAREFUL WHEN USING IT!
+
+\section{Notes}
+
+This behavior stops when you press the 'r' key.
+
+\end{document}

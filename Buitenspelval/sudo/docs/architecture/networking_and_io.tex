@@ -1,0 +1,425 @@
+\documentclass[a4paper, 10pt, oneside]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.pdf, .png}
+\usepackage{verbatim}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=blue]{hyperref}
+\usepackage{listings}
+\usepackage{courier}
+
+\title{Input and Output using TCP/IP sockets, Unix Domain Sockets, pipes or ptys}
+\begin{document}
+\maketitle
+
+%set the font size of the code examples:
+\lstset{ 
+    basicstyle=\footnotesize,  
+}
+
+\tableofcontents
+
+\section{Introduction}
+This document describes the key elements in the communication infrastructure of
+the Brain and the communicators. There are classes available to asynchronously
+process IO requests on network and Unix Domain sockets, pipes and ptys. This
+allows data to come in at any moment and be processed without any delay. The
+VisionController uses this, for example, to put the observations into the memory
+as soon as they come in, making them available sooner for any behavior waiting
+for them. The key parts in this system are the use of polling mechanisms of
+the operating system and a thread monitoring the IO objects(files, sockets,
+pipes etc).
+
+\section{The IOManager}
+The IOManager class is a class that is used to manage objects that wrap file
+descriptors in some way, such as network sockets, pipes, pty's and files.\\
+
+The IOManager class should never be instantiated directly but should always be
+accessed through the use of the IOManager() function that makes it sort-of
+singleton. The reason the \_\_new\_\_ method is not used instead is that that
+occasionally gives problems when registering new objects, due to the threaded
+nature of the object.\\
+
+The IOManager runs in a loop, polling all the registered file descriptors.  For
+each file descriptor, functions are called to notify them that there is data to
+read or write.\\
+
+\subsection{Polling, Edge and Level Triggered mode}
+For the polling, the IOPoll class is used. This is a wrapper around the
+different polling mechanisms available on different platforms. These include
+select, poll, epoll and kqueue/kevent. If the poller supports it, Edge Triggerd
+behavior will be enabled on it. This also slightly changes the behavior of the
+IOManager. If Edge Triggered behavior is enabled, for each file descriptor for
+which an IO event is received, its handle\_read or handle\_write method will be
+called continously until a IOWrapperEnd exception is caught. When this happens,
+the file descriptor should not have any more data to read or write, to reset the
+file descriptor in the epoll object. This implies that all reading and writing
+on file descriptors in the handle\_read and handle\_write methods should be done
+in a non-blocking way, otherwise the last call to those methods will block
+instead of throwing the IOWrapperEnd exception. \\
+
+The alternative to Edge Triggered mode is Level Triggered mode. The main
+difference is that while Edge Triggered behavior only notifies the process of
+new data or the becoming writable of the file descriptor, Level Triggered mode
+will notify the process each time any file descriptor is readable or writable.
+This results in much more events. When running in Level Triggered mode, after
+each poll, the events are processed one by one. Each file descriptor that is
+readable will be read from once and each file descriptor writible will be written
+once. \\
+
+See section \ref{iopoll} below for more information about polling.
+
+\subsection{The Wake Up Pipe}
+Access to the IOPoll object and the lists of registered IOWrappers is
+synchronized using a lock. Mostly, the lock will acquired by the poll method of
+the IOPoll object. This means that if a new wrapper is registered, or if new
+data is available to write, it has to wait for the lock to be released before
+the IOPoll object can be modified. To speed this up, a wake up pipe is
+registered in IOPoll during startup. When another thread wants to acquire the
+lock, it can write data to this pipe to wake up the call to poll, thus reducing
+the waiting time and increasing performance. For this, the \_\_wakeup method is
+used.
+
+\subsection{IOWrapper Requirements}
+Each file descriptor should be wrapper in a subclass of the IOWrapper class,
+which enforces a set of methods to be available on the object.\\
+
+In addition to the \_handle\_read and \_handle\_write methods, a
+\_handle\_attempt and \_handle\_loop method should also be available. The
+\_handle\_attempt is called for registered wrappper objects that are not
+currently connected. This is useful mainly for network sockets that try to
+connect to a remote host, or server sockets that cannot currently bind to their
+port because the port is taken by another process or is otherwise unavailable.\\
+
+The \_handle\_loop function is called around 10 times per second, and allows the
+IOWrappers to perform some action on regular intervals.\\
+
+Most importantly, each wrapper should define a fileno() method that returns the
+file descriptor belonging to the object. This is used to register it in IOPoll
+and to map any events to the correct wrapper.\\
+
+Other functions that should be defined are close() to close the file descriptor
+and unregister it from the IOManager, connected() that should return whether the
+IOWrapper is connected/active (meaning that the fileno() method should return an
+open file descriptor).\\
+
+Current implementations of IOWrapper subclasses are ThreadedSocket and
+ThreadedPipe. The first wraps a network socket, either client or server.  The
+ThreadedPipe object wraps pipes in a non-blocking way.\\
+
+Usually, you only need to concern yourself with IOManager when you are writing
+or modifying a new IOWrapper, for example for reading files.
+
+\subsection{Error Handling}
+IOManager should be very stable because it will/can manage all IO of the system
+and not just a single socket or file. Therefore, all calls to IOWrapper
+instances are wrapped in a try/except block that unforgivingly removes the
+wrapper from the IOManager if they result in an exception. It will generate a
+CRITICAL message in the logger to inform the user about this. The only exception
+is the IOWrapperEnd exception that should be raised by the \_handle\_read and
+\_handle\_write methods of the IOWrapper class when there is no more data to read
+or when no more data can be written.\\
+
+Do take care that your subclasses/implementations do not generate exceptions or
+the wrappers will be closed and removed from the wrapper.
+
+\subsection{Profiling}
+Sometimes it can be handy to profile the IOManager to see where delays in
+network traffic are coming from. Under normal circumstances, most time should be
+spent in the poll method from the IOPoll object; waiting for new IO to handle.
+Profiling will enable profiling in the IOManager thread, so this will include
+all function calls to the IOWrapper objects. This might indicate bottlenecks in
+implementations.\\
+
+To enable profiling, set the profile attribute of the IOManager class to the
+filename to which to writing profiling information. For example:\\
+
+\begin{lstlisting}
+_IOManager.profile = "~/iomanager.prof"
+\end{lstlisting}
+
+This will store the profiling data to iomanager.prof in your home directory.
+This profiling data can then be read using the pstats package. See the Python
+documentation for more information, it's at:\\
+
+\url{http://docs.python.org/library/profile.html}
+
+\subsection{Stopping conditions: signals, timeouts and threads}
+Any IOWrapper will at some point register itself with the IOManager by obtaining
+an instance with the IOManager() function, that will instantiate and start a new
+IOManager if needed. IOManager will also by default catch any signals the
+process receives and react on those by shutting down the IOManager and closing
+all the open file descriptors. Note that for this a shutdown flag is used to
+avoid starting a new IOManager when signals have been caught. This makes sure no
+new instance is started. If you want to handle signals in another way, you can
+overwrite the signal handlers of IOManager and make sure the IOManager signal
+handler is not called for that signal. If the IOManager is catching a signal and
+you want to restart IOManager afterwards, you will have to set the shutdown flag
+(iomanager.\_\_iom\_shutdown) to False afterwards.\\
+
+When IOManager is running and no file descriptors have been registered for over
+30 seconds, it will shut itself down to save processing cycles. As soon as any
+IOWrapper tries to register itself with the IOManager, a new instance will be
+registered.\\
+
+IOManager also monitors the thread that started the IOManager in the first place
+and will terminate as soon as that thread dies. This could have a undesired
+effect if the IOManager is initially started from a thread that is not the main
+thread of the program. If you are experiencing this in your code, a simple
+solution is to initially start the IOManager from your main thread. You can
+simply do this by putting the following code somewhere in your main thread,
+before any IOWrapper is instantiated in any thread:\\
+
+\begin{lstlisting}
+from util.iomanager import IOManager
+IOManager()
+\end{lstlisting}
+
+\section{IOPoll}
+\label{iopoll}
+IOPoll is a wrapper around several different polling mechanisms available on
+different platforms. These mechanisms poll for events on file descriptors and
+notify the user when a file descriptor is readable or writable.
+
+Select is available on almost all platforms, but has severe performance issues,
+especially with large sets of file descriptors. All file descriptors must be
+passed on each poll using select. Therefore, select is available but used only
+as a fallback for platforms on which no better alternative is available.
+
+Linux provides the poll interface, with which a set of file descriptors can be
+registered. These file descriptors will be polled each time the poll function is
+called. Since the file descriptors are registered within the kernel, this
+provides great performance benefits.
+
+Since kernel 2.5.44, a new interface is available: epoll. This is a faster
+version of poll and also allows the use of Edge Triggered polling. This means
+that events are only reported once: if data is available to read, the poll will
+return this once and then will not report this again until there is new data
+available to read. This means that after the file descriptor has been reported
+readable or writable, you have to exhaust the IO buffers and keep reading or
+writing until all data has been read or written (and EAGAIN occurs), before new
+events will be reported.
+
+On BSD derivatives, kernel queues are available (kqueue). On these queues,
+kernel events can be registered and these events will report readability or
+writability of file descriptors.
+
+To simplify the usage of the different polling mechanisms, the IOPoll class can
+be used. Simply instantiate an IOPoll() object and the best available mechanism
+is used. Using the poll method with a timeout in milliseconds, the respective
+poll function of the selected mechanism is invoked and the events are returns in
+a standardized format as either IO\_READ, IO\_WRITE or IO\_ERROR, or a combination
+of those. Optionally, an argument specifiying a preference may be passed to
+IOPoll which will try to use the specified polling mechanism. You can specify,
+epoll, poll, kqueue or select, but the success depends on the availablility of
+the mechanism.
+
+\section{ThreadedSocket}
+The ThreadedSocket is an instance of the IOWrapper for IOManager, to
+network connections in an asynchronous manner.\\
+
+\subsection{Comparable Systems}
+The ThreadedSocket/IOManager combination shows some relation to the asyncore
+system or the SocketServer framework but it has some major advantages. The use
+of the IOManager allows allows the use of the IOPoll poller that can fall back
+to the select class available on nearly every platform, the poll or epoll
+interfaces on Linux, and the kqueue interface on BSD-derivatives. All these
+interfaces perform significantly better than the select system call, especially
+the Edge Triggered epoll mechanism on Linux. This will increase throughput and
+responsivity of the IO manager. See the IOManager class for more information
+about this.
+
+\subsection{Functionality}
+The system uses threads, hence the name. This means that while IO is processed
+asynchronously, due to the Global Interpreter Lock on CPython, it still needs
+some time from the interpreter to work once in a while. If your code uses busy
+loops, the IOManager will not get the chance to process the incoming and 
+outgoing data and therefore the performance might degrade.\\
+
+When a ThreadedSocket object is instantiated, it will register itself with the
+IOManager, as an unconnected socket, unless a connected socket has been passed
+in, in which case it will be registered as a connected socket right away.\\
+
+The IOManager will then call the \_do\_attempt function of the ThreadedSocket
+approximately 10 times per second, at which the socket can try to connect. If it
+actually does this 10 times per second depends on the retry\_timeout
+parameter.\\
+
+When the socket succesfully connects to the remote host or binds to the port, it
+will register itself as a connected socket with the IOManager. As soon as there
+are incoming connections or if there is data to read or write, the
+\_handle\_read and \_handle\_write methods are called to handle this. Also, 10
+times per second, the \_handle\_loop function will be called to perform any side
+functions a subclass of the ThreadedSocket might want to perform. The processing
+in this method should be minimal.\\
+
+To allow subclasses to handle received data differently, the handle\_receive
+method can be overridden. It will be called with the received data. The default
+implementation will store it in the receive buffer which is a list of items
+received in chronological order.
+
+\subsection{IO: Socket Settings}
+By default, sockets are opened in blocking mode and with the linger mode
+disabled. This poses some problems. When running in Level Triggered mode,
+blocking IO might be appropriate since the poll object knows for sure at any
+moment that the socket is readable or writable when calling the respective
+methods. But when using Edge Triggered mode, attempts to read and write will be
+made until an error is returned. Therefore, the socket should be non-blocking to
+avoid blocks when the kernel IO space is filled. For that reason, sockets
+wrapped in the ThreadedSocket class are always set to non-blocking mode.
+Additionally, for server sockets, problems may arise during debugging when a
+reopening of the socket is attempted too soon after the previous socket was
+closed. Because of the way TCP/IP is specified, a socket should be in a
+TIME\_WAIT state for a while after it has been closed because it is more or less
+guaranteed that the data will reach the host if it is still up. During the
+TIME\_WAIT state, which can last from 2 to 4 minutes, usually no new socket can
+bind to the same port. \\
+
+There are two ways around this. The first is to allow binding to ports that
+are already claimed by another socket. The other one is to avoid the TIME\_WAIT
+state. The ThreadedSocket class uses the LINGER option to avoid the TIME\_WAIT
+state. The close function on the socket will block for a little while to receive
+more data and will then close. The reason REUSE\_ADDRESS is not used instead is
+because that also allows reusing of sockets that are still actively in use, thus
+giving problems when multiple servers are listening on the same port.
+
+\subsection{Sending and receiving: cPickle and cStringIO}
+The ThreadedSocket will use cPickle by default to wrap pickleable Python objects
+before sending them over the socket. This allows for more complex structures,
+such as dictionaries or NumPy arrays to be sent over the socket.\\
+
+When the data has been preprocessed, it will be stored in a cStringIO buffer.
+This buffer is used when sending the data. After each call to send, the number
+of bytes actually sent determines the new position in the cStringIO buffer. This
+way, the strings will not be copied every time but the internal pointer of the
+cStringIO will be used. This gives much better performance.\\
+
+When data is received, it is stored in a cStringIO buffer once again. This
+buffer is then used by cPickle to load the pickled items one by one. When
+unrecognized data appears, it is collected and added a separate string in the
+resulting data. Pickled items could also be truncated because they have been
+sent in several parts. When this happens, the data received so far is stored and
+prepended the next time data arrives. Unpickling the data is then attempted
+again. This way, no data should be lost.
+
+\subsection{Unix Domain Sockets}
+Unix Domain Sockets can be used on POSIX compliant operating systems. They
+behave similar to normal sockets but bypass the TCP/IP stack, making them more
+performant in almost all situations. The data does not have to be
+wrapped and unwrapped in IP packets, which is already an improvement and because
+communication over Unix Domain Sockets is always local, when a client writes
+data to the server, it can immediately be stored in the right memory location.\\
+
+As mentioned above, Unix Domain Sockets can only be used for communication
+between process on the same machine. They are accessed through a file in the
+filesystem but all communication takes place in the kernel. Therefore, mounting
+a filesystem over SSH and attempting to use a domain socket that way will not
+work.\\
+
+The ThreadedSocket supports Unix Domain Sockets. To use them, provide a name as
+a port argument instead of a port number. When the type of the port argument is
+string, it is used as the name of a socket. The socket files created by
+ThreadedSocket are stored in the /tmp directory. Thus, using port 'test' will
+result in a socket file /tmp/test.\\
+
+Because the files are accessed through the filesystem, one can easily remove or
+restrict access to the socket by deleting the file or by changing the attributes
+of the file. If yu remove the socket file, the socket will remain open but no
+process will be able to connect to it.
+
+\subsection{Ending a connection}
+When connected to a ThreadedSocket, you can close the connection in several
+ways. Sending a Ctrl+C or Ctrl+D sequence to the socket will result in closure
+of the socket. This can be used when debugging using Telnet, for example.\\
+
+Programmatically, you can just close the socket by closing the corresponding
+file descriptor. ThreadedSocket will detect this at the other end and close its
+own socket.
+
+\section{BinarySocket}
+The BinarySocket is an instance of the IOWrapper for IOManager, to handle
+network connections in an asynchronous manner.\\
+
+It uses the ThreadedSocket class to handle the IO related functionality of the
+class.\\
+
+The purpose of the BinarySocket class is to send binary data over a socket.
+The pickle class can be used for this theoretically, but with large amounts of
+data this is not efficient as pickling takes a lot of time. Each piece of binary
+data can be accompanied by a piece of metadata. The metadata should be
+relatively small as it will be pickled before being transported. The binary
+string can be of any length. If you want, you can use the BinarySocket as a
+replacement for threadedsocket as you can simply omit the binary data and just
+send metadata; yielding more or less the same results, but this is not
+recommended.\\
+
+The BinarySocket works rather simply by prepending a 8-byte header before each
+request. The first 4 bytes represent an unsigned integer giving the amount of
+bytes of metadata in the current request, the next 4 bytes represent an unsigned
+integer giving the amount of bytes of binary data in the current request. The
+size of the metadata is calculated after pickling the metadata.\\
+
+When receiving data, the header will be read. Afterwards, the specified amount
+of bytes is read as metadata and the data is unpickled, and next, the specified
+amount of bytes of binary data is read. When the entire request has been
+received, the metadata and binary data is appended to the receive buffer and can
+be obtained normally, as if you were retrieving data from the ThreadedSocket:\\
+
+\begin{lstlisting}
+data = binarysocket.get_data()
+\end{lstlisting}
+
+Here, data will be a list containing the received data. Each element will be a
+tuple (metadata, binary\_data). You can then use the metadata to recreate
+whatever the binary data representes. For example, you can store the depth,
+number of channels and the dimensions of an opencv image in the metadata and use
+the image.tostring() method to generate the binary data. This way, you can
+transport images over the socket easily. This also works for, for example, large
+numpy arrays, sound streams or other large data.\\
+
+\subsection{Reliability}
+The BinarySocket class is designed to be used over Unix Domain Sockets, TCP
+sockets connecting to a local host or to a Local Area Network. It was not
+designed to be used over a more unstable connection such as the internet. It
+therefore does not split the data, use checksums or have means to refetch
+incorrectly transferred parts, making the protocol more efficient over stable
+connections. To transfer over the internet, more elaborate protocols are
+required, for example FTP. 
+
+\section{ThreadedPipe}
+This class is an implementation of the IOWrapper base class, making it work with
+the IOManager.\\
+
+A ThreadedPipe wraps a pipe, returned by os.pipe() or another means of obtaining
+a pipe. Basically, it will work with more pipe-like interfaces; such as pty's
+and probably files as well. \\
+
+Since there are lots of different methods to obtain a pipe, the constructor
+itself will in most cases not create a pipe, but will accept the one passed in.
+This can be an object that has a fileno() method, returning the file descriptor
+of the pipe. It can also be an integer, the file descriptor itself. A third
+option is to have the constructor create either a pipe or a pty automatically.
+To achieve this, pass "pipe" or "pty" as argument to the constructor. Because
+each pipe has another end and each pty has a slave, the slave file descriptor
+can be obtained by calling the slave\_fd() method. This will return any slave
+file descriptor that has been generated by the constructor.\\
+
+IOManager requires non-blocking IO on all IOWrapper. Therefore, the pipe needs
+tob e put in non-blocking mode. This cannot be done by the default Python
+object, therefore we resort to the functionality provided by the fcntl module.
+Also, because the file descriptor was provided from outside, there is a risk
+that the file descriptor is closed by other means than through this wrapper. To
+avoid these kind of problems, the file descriptor is duplicated with a call to
+os.dup(). The new file descriptor will be independent of the original and thus
+will remain open when the original file descriptor has been closed.
+
+\subsection{Uses}
+Currently, the ThreadedPipe is used in the GUI to monitor the subprocesses
+started. The default functionality of subprocess.Popen only gives the output of
+the process after it has terminated, which is obviously not what we want.
+Optionally, pipes can be used instead. Here, glibc poses a problem because it
+automatically starts output buffering when it detects it is writing to a pipe.
+Therefore we use a pty (pty.openpty()) instead to obtain a pseudo terminal, on
+which no output buffering is performed. The ptys are wrapped in the ThreadedPipe
+object which reads all output and errors and passes it to the GUI.
+\end{document}

@@ -1,0 +1,184 @@
+\documentclass[a4paper, 12pt, oneside]{report}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.pdf, .png}
+\usepackage{verbatim}
+\usepackage{hyperref}
+\hypersetup{
+%   backref=true,
+%   pagebackref=true,
+%   hyperindex=true,
+    colorlinks=true,
+    breaklinks=true,
+    urlcolor= blue,
+    linkcolor= blue,
+%   bookmarks=true,
+    bookmarksopen=true,
+    pdftitle={\titleVariable},
+    pdfauthor={\authorVariable},
+    pdfsubject={Documentation}
+}
+
+\newcommand{\titleVariable}{Object Detection Procedure
+
+\normalsize{Robot Cognition Laboratory}
+
+\normalsize{Artificial Intelligence and Cognitive Engineering Institute}
+
+\normalsize{Groningen University}}
+
+\newcommand{\authorVariable}{Marko Doornbos, Jorge D\'{a}vila Chac\'{o}n}
+\newcommand{\firstRelease}{24-02-2011}
+
+\title{\titleVariable}
+\author{\authorVariable}
+\date{\centering First release: \firstRelease \\ Last modification: \today}
+
+\begin{document}
+
+%Insert here title
+\maketitle
+
+%Insert here abstract
+\begin{abstract}
+In this document will be described the standard procedures for object recognition.
+It will be included a detailed description for training the -possibly several- systems and testing their correct functioning.
+As the object detection systems used by the team are constantly evolving, this document will be continously updated in order to reflect the latest working procedures used by the team.
+\end{abstract}
+
+%Insert here table of contents
+\tableofcontents
+
+
+\chapter{Image Object Detection}
+
+\section{Introduction}
+Currently the image-based object detection system relies on a SURF implementation made in python.
+The actual extraction of SURF features in being done by the OpenCV method \verb=cv.ExtractSURF()=.
+It is recommended to take a look at the project repository folder \verb=$BORG/Brain/src/vision/=, at the files \verb=surfdetect.py= and \verb=surfdetect_test.py=.
+
+\section{Training}
+The training procedure is divided in two steps: Collect images from the desired object and train the system on such dataset.
+
+\subsection{Take Images}
+In the repository folder \verb=$BORG/Brain/src/util/= it can be found the file \verb=takesnapshotskeyboard.py=.
+This file allows to collect a dataset of images from any webcam or directly from the robot's camera.
+This parameter has to be specified at the bottom of the file in the \verb-if __name__ == '__main__':-.
+The the path to the folder where the images will be stored is predefined to be \verb=$BORG/Brain/data/models/=.
+
+After the images are collected, they have to be moved to a folder with a descriptive name of the instances it contains.
+For example, if it was collected a set of images of a soda can, then those images should be located in a folder named \verb=$BORG/data/models/soda_can/=.
+
+\subsection{Train on Images}
+Once the images were collected and placed in an adequately named folder, the path to this folder has to be specified in the file \verb=$BORG/Brain/src/config/config_<BEHAVIOR>=, where \verb=<BEHAVIOR>= should be replaced by the name of the behavior using the object detector module.
+
+An example of a config file is as follows:
+
+\begin{verbatim}
+[general]
+starting_behavior = followObject
+
+[body]
+number_of_naos = 1
+nao_ip_0 = 192.168.0.10
+number_of_pioneers = 1
+pioneer_ip_0 = 192.168.0.20
+pioneer_port_0 = 12345
+
+[sensor_integration]
+
+[speech_recognition]
+
+[vision_controller]
+start_port = 50000
+end_port = 52000
+
+#Startup commands and alias for each module
+modules_settings:
+    object_detector_module = objectdetector_avm visualize=1
+                             vision_window=VISION
+                             detection_window=DETECTION
+                             video_source=webcam camera=-1
+                             update_frequency=10 min_matches=10
+                             training_dirs=/Brain/data/models/soda_can:
+                             /Brain/data/models/ketchup
+#Modules to run on each host
+modules:
+    localhost = objectdetector_avm
+
+[sonar_controller]
+
+[navigaiton_controller]
+\end{verbatim}
+
+This file will be read by the module \verb=$BORG/Brain/src/vision/objectdetector_avm.py=. The functionality of the given parameters is:
+
+\begin{enumerate}
+\item{\verb$objectdetector_avm$.} Name of the module to be started by the vision controller. This file will receive the specified parameters.
+\item{\verb$visualize=1$.} If visualize = 1, the module will display in a \emph{first} window (\verb=vision_window=) the processed image with a box around the detecion, and the transformed keypoints marked by little crosses. In a \emph{second} window (\verb=detection_window=) will be shown the detected object as it appears in the training folder. The circles in the second window represent the matching keypoints.
+\item{\verb$vision_window=VISION$.} Name of the \emph{first} visualization window.
+\item{\verb$detection_window=DETECTION$.} Name of the \emph{second} visualization window.
+\item{\verb$video_source=webcam$.} It can be specified to use either \emph{webcam} or \emph{nao} as video sources.
+\item{\verb$camera=-1$.} This value is required by OpenCV methods. In case of specifying \emph{webcam} as video source, -1 will indicate to use the standard video source. Notice that for laptops this value will collect images comming from the embedded camera on the screen -if any-. In the case of plugging an external webcam it should be indicated the positive value 1.
+\item{\verb$update_frequency=10$.} Required value by SURF modules. It is not being used by most of the behaviors, therefore a standard value of 10 can be always used.
+\item{\verb$min_matches=10$.} Minimum amount of matching keypoints to consider a detection present on an incoming image from the video source.
+\item{\verb$training_dirs=/Brain/data/models/soda_can:/Brain/data/models/ketchup$.} Paths of the folders containing the training images. The paths are relative to the \verb=$BORG= environment variable. Separate the paths with colons.
+\end{enumerate}
+
+\section{Testing}
+To start the modules used for detecting objects, open a terminal the folder \verb=$BORG/Brain/src/=. There run the general start script with the desired config file specified after a space: \verb=.start.sh config/config_<BEHAVIOR>=
+
+\section{Retrieving info from the memory}
+Detections of trained objects are stored in memory. The key for a particular object is the name of the folder the trained images are in, past the last $/$.
+
+So in the case of the examples above, the tags for detections are \verb='soda_can'= and \verb='ketchup'= respectively.
+
+The dictionary for this memory item contains an array representing the corners of the estimated bounding box under the tag \verb='corners'=. 
+
+The first index of the array indicates the number of the corners (0 to 3).
+The second index indicates x and y (0 and 1).
+
+Keep in mind that because of the rotation invariance in SURF, there is no guarantee about the relative positions of the corners. They might even be outside the actual image.
+
+\section{About SURF}
+
+There are a few things to keep in mind about SURF.
+
+It uses integrals on greyscale images to detect key points, which are learned from example images and matched on the images you use.
+These key points are typically interesting points in the image with a lot of contrast, such as corners and complex shapes.
+Tis is done at various scales.
+Because of this method, objects which do not offer enough suitable key points are almost impossible to detect with this method.
+If this is the case, use a different detection method.
+
+The reliance on details means that image blur can be a serious problem as well.
+It is nigh impossible to detect small objects at over 50 cm away from a moving robot.
+In that case, consider using another method to detect possible objects and moving in and checking with this module if one is detected.
+
+You can vary the number of key points needed to get a match to find the best value for the objects you are trying to detect.
+Keep the balance between precision and recall in mind.
+There is the option of postprocessing on the bounding box that was found. 
+If the detected values are unrealistic, you may have a false positive.
+
+The algorithm is scale and rotation invariant. 
+This is very useful for detecting objects at various ranges and in various positions.
+It handles other image mutations like skew changes less effectively, but can still work decently.
+
+Using more training images might give you a better chance of a detection in one image, but it will also slow down the processing.
+It might also increase the number of false positives.
+Try having a small but effective data set of examples per object.
+
+Try to crop training images to only have the object to be trained on.
+Other things in the image might also register as key points, while not being relevant to what you want to detect.
+This can lead to false positives.
+
+Detecting an object once might be a false positive.
+Try to make sure a particular object was detected in multiple frames before assuming it is there.
+
+\chapter{Kinnect Object Detection}
+\section{Introduction}
+\section{Training}
+\section{Testing}
+
+\end{document}
+

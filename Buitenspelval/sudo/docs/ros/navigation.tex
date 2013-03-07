@@ -1,0 +1,189 @@
+% [page size, font size, recto-verso]{style of the document}
+\documentclass[a4paper, 12pt, oneside]{report}
+
+% Encoding of this file. On Linux, all files are UTF8 encoded.
+\usepackage[utf8x]{inputenc}
+
+% To write mathematical formula:
+% \begin{align} ... \end{align}, \begin{equation} ... \end{equation}
+\usepackage{amsmath, amssymb}
+
+% To insert graphics:
+% \includegraphics[options]{path}
+\usepackage{graphicx}
+
+% The allowed type of image files.
+\DeclareGraphicsExtensions{.pdf, .png}
+
+% To include code file without any layout
+% \verbatiminput{path}
+\usepackage{verbatim}
+
+% To include PDF files
+% \includepdf[pages = z,x-y]{path}
+\usepackage{pdfpages}
+
+% To do tables on many pages
+% \begin{longtable}{define the columns} ... \end{longtable}
+\usepackage{longtable}
+
+
+\textwidth=16cm
+\oddsidemargin=0pt
+\evensidemargin=0pt
+
+%% The 3 variables which you must initialize:
+% Title of the document,
+\newcommand{\titleVariable}{Mapping using GMAPPING Documentation}
+% The author(s),
+\newcommand{\authorVariable}{Amirhosein~Shantia}
+% The date of the first release.
+
+
+\usepackage{hyperref}
+% To create all hypertext links for the bibliography, the figures, the bookmarks etc.
+% \url{http://www.thewebsite.org}
+\hypersetup{
+% 	backref=true,
+% 	pagebackref=true,
+% 	hyperindex=true,
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= blue,
+	linkcolor= blue,
+% 	bookmarks=true,
+	bookmarksopen=true,
+	pdftitle={\titleVariable},
+	pdfauthor={\authorVariable},
+	pdfsubject={Documentation}
+}
+
+\title{\titleVariable}
+\author{\authorVariable}
+
+
+\date{\centering Last modification: \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+% To create a table of contents at the beginning of the documentation.
+\tableofcontents
+
+\section{Introduction}
+
+This documentation helps you to understand how to use Gmapping method with the BORG architecure.
+
+\section{Pre Requisites}
+The pre requisites to run gmapping is as follow:
+
+\begin{enumerate}
+ \item ROS Fuerte installation
+ \item sicktoolbox and sicktoolbox\_wrapper stack
+ \item gmapping stack
+ \item borg\_pioneer stack 
+ \item Borg architecture with manual or automatic moving behavior
+\end{enumerate}
+
+It is better for you to know your way around ROS. So I suggest that you take a look at ROS tutorial at 
+\url{www.ros.org}. Especially the commands to find,install, and run packages. If the laptop that you are working with is
+already set up by BORG members, you don't have to install anything.
+
+\section{Laser Drivers and Stack}
+The most important thing is to have the laser running. So make sure that the ros-fuerte-laser-drivers package is installed. If not,
+use ubuntu package manager to install it. That will install the sicktoolbox stack. You also need the wrapper to actually access the laser.
+Use \verb|rosmake sicktoolbox_wrapper| in your ROS workspace to make the package.\\
+
+
+You need to note that the laser is connected through a serial-to-usb connector. This means it is available in one of the /dev/ttyUSBX, where X is 
+a number between 0-9. Since our pioneer is also using serial cables, you need to check which number is the correct one. Usually disconnect and 
+connect again, then the highest number is for the laser.\\
+
+After you have found the port you need to tell the wrapper, and dont worry about the baud rate. It will find it automatically.
+In order to set parameters you have three choices. 
+
+\begin{enumerate}
+ \item Setting parameters before running: \\
+ \verb|rosparam set sicklms/port /dev/ttyUSBX|
+ \item Running and setting parameters in one line:\\
+ \verb|rosrun sicktoolbox_wrapper sicklms _port:=/dev/XXX |
+ \item XML roslaunch file. I will talk about this later
+\end{enumerate}
+
+
+More information about sicktoolbox\_wrapper can be found in \url{http://www.ros.org/wiki/sicktoolbox_wrapper}
+
+Now, in order to run the laser node, you have to use the \verb|rosrun| command as stated before. 	
+
+\section{GMAPPING}
+Gmapping is one of the strongest laser based SLAM method developed by MIT. It is installed automatically with ros fuerte desktop full package.
+In order to run it simply usepackage
+\begin{verbatim}
+ rosrun gmapping slam_gmapping
+\end{verbatim}
+
+For more information check \url{http://www.ros.org/wiki/gmapping}
+
+\section{Borg pioneer}
+This ros stack is available in the repo. Just go to \verb|robotica/ros/borg_pioneer| and use \verb|rosmake borg_pioneer| to make the package.
+There is a transform cpp file that will be built. Use rosrun to run it as follow.
+\begin{verbatim}
+ rosrun borg_pioneer transform
+\end{verbatim}
+
+Now, everything is ready. Just run a behavior with manual or automatic moving. As soon as the robot moves, you should see information on the gmapping
+terminal. If there are warning about \verb|odom| topic, then something is wrong. Ask an expert!
+
+In order to see what is being mapped you should run \verb|rviz|, ROS vizualization program. Just open a new terminal and type
+\begin{verbatim}
+ rosrun rviz rviz
+\end{verbatim}
+
+You should see the location of the robot, the current view of the laser. As soon as you move, you see the map growing, and the robot location on the 
+map too.
+
+\section{Map server}
+After you mapped the environment, you probably want to save it! this is done by using the \textit{map\_server} stack.
+You type 
+
+\begin{verbatim}
+rosrun map_server map_saver Name_of_the_map_to_be_saved.       
+\end{verbatim}
+
+Then, the program makes two files, one picture and one yaml. These can be loaded later for localization using other stacks.
+
+\section{Adaptive Monte Carlo Localization - AMCL}
+
+Now that a map is made, we can use AMCL for offline localization. The amcl package is part of the ROS navigation stack.
+This method requires a pose estimate when the module is loaded. \textbf{WARNING}, if the pose estimation is wrong, your whole localization will be rubbish.
+This pose estimation can be done either using rviz, or you can enter a starting pose.\\
+In rviz, on top left, there is a button names \textit{2D Pose Estimate}. Click it, then click(and keep holding) the approximate location of robot, then move the mouse
+to select the correct angle. You will see a green arrow, and as soon as you release the mouse button, the pose estimate will be sent to amcl.\\
+You can also enter a pose estimate in the config file as follow:
+
+\begin{verbatim}
+#IMPORTANT MAP LOCATIONS:
+#				  X     Y   Angle
+#	DOOR A: pioneer_pose_0 = -1500 -500 90
+#
+#	DOOR B: pioneer_pose_0 = -9000 13500 0
+#PIONEER STARTING POSE
+pioneer_pose_0 = 0 0 0
+
+\end{verbatim}
+
+As can be seen, we usually keep important locations in the config file as comment for fast switching of the starting pose.
+
+
+\section{Good Practices for Mapping}
+It is usually a good idea to select a corner of a room/arena as the coordinate (0 , 0, 0). It is better than this corner is close to one of the
+doors. Then use a meter or rviz to read to estimate the distance of the corner to the middle of the door. Since your robot will usually stand 1 meter behind the door, 
+that location is a proper starting pose. Calculate the rest of the entries/exits using the same method.
+
+\section{Path Planning}
+At this moment we use our own path planning method. During mapping, you can save locations and give them names... To be continued.
+
+\end{document}

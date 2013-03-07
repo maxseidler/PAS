@@ -1,0 +1,355 @@
+\documentclass[a4paper, 10pt, oneside]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.pdf, .png}
+\usepackage{verbatim}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{courier}
+
+\title{The Vision Controller}
+\begin{document}
+\maketitle
+
+%set the font size of the code examples:
+\lstset{ 
+    basicstyle=\footnotesize,  
+}
+
+\section{Introduction}
+This document describes the VisionController architecture. The VisionController
+runs on the brain and communicates with all the vision laptops to make sure the
+right modules are sending the right data. \\
+
+\section{Architecture}
+The VisionController is started from the Brain. Upon startup, it reads the
+configuration file and from that, decides which modules to run on which laptop.
+See the configuration section for more info. \\
+
+The controller also starts a CommunicatorConnector for each laptop, which
+connects to the communicator on that laptop. \\
+
+Upon startup, in the \textbf{\_\_init\_\_}, the VisionController assigns unique
+port numbers (in a range set which should be chosen in the configuration file)
+to the modules (In the init function, a load configuration function is called).
+It then sets up listening sockets on each port by invoking the
+\textbf{start\_communication} function, as objects of class
+VisionModuleListener, which is a subclass of ThreadedSocket. All IO on this
+socket is handled asynchronously by the use of the IOManager. See the
+documentation on IO for more information. \\
+
+Note that when the visioncontroller sets up listeners for vision modules that
+are run by a communicator on the local host, it will not use a TCP port but a
+Unix Domain Socket instead. The name of this port is formed by using the random
+TCP port number (somewhere between 50000 and 60000, usually), and appending that
+to the string "Vision\_". This would become "Vision\_50313\" for example. The
+vision module should decide whether to use a TCP connection or a Unix Domain
+Socket connection based on if the port is numeric or a string. The
+AbstractVisionModule already takes care of this so when you use that as a base
+class, you do not need to worry about this. See the documentation on the
+Abstract Vision Module below for more information. When the VisionModuleListener
+gets an incoming connection, it spawns a new VisionModuleConnectionHandler that
+handles that connection (Note that the Listener and Connection Handler are in
+separate files). \\
+
+\section{Configuration}
+This is a sample configuration file: \\
+
+\begin{lstlisting}
+[vision_controller]
+communicator_port = 49152
+start_port = 50000
+end_port = 52000
+
+# Startup commands and alias for each module
+modules_settings:
+    good_surf = surfdetect -traintime 50 -delaytime 5
+    bad_surf = surfdetect -traintime 30 -delaytime 5
+    module2 = module2 -setting1 a
+    module3 = module3 -setting2 b
+
+# Modules to run on each host
+modules:
+    localhost = good_surf,module2,module3
+\end{lstlisting}
+
+The communicator\_port is the port to which to connect to the communicator.
+The default is 49152. This option is overridden by the command line argument
+'--communicator\_port' of the brain, or by specifying "RANDOM\_PORTS=1" on the
+command line before the start script (eg RANDOM\_PORTS=1 ./start.sh).
+
+start\_port is the first port available for vision modules to connect to. \\
+
+end\_port is the last port available for vision modules to connect to. \\
+
+modules\_seetings is a multi-line setting. Each line defines a module alias and
+the command to start that module. So, in the example, the module alias
+``good\_surf'' is started by the command ``surfdetect -traintime 50 -delaytime
+5''. Later the port which your vision module should connect to will be added by
+the communicator. Note that you module should be able to read command line
+arguments. \textbf{It should not use configuration files anymore}.\\
+
+modules is a multi-line setting. Each line defines the module to start on a
+given hostname. The modules are identified by their alias, which should be
+defined in the modules\_settings setting above it. So, the example says to run
+the modules identified by ``good\_surf'', ``module2'' and ``module3'' on the host
+``localhost''. \\
+
+\section{VisionController}
+The VisionController is the main module, keeping track of the others. It also
+provides methods that start, stop and restart modules. \\
+
+\subsection{start\_module}
+The method start\_module(hostname, module) starts the module named ``module'' on
+the host with hostname ``hostname''. The VisionController will take care of
+assigning a port to the new module and requesting start of the module from the
+communicator. \\
+
+\subsection{request\_module\_restart}
+The method request\_module\_restart(identifier) requests a restart from the module
+identified by ``identifier''. ``identifier'' is a tuple (hostname, module). It
+requests a restart of the module named ``module'' to the communicator on host
+``hostname''. This method cannot be used to start new modules, as it checks if
+the module is actually wanted running. \\
+
+\subsection{stop\_module}
+The method stop\_module(hostname, module) stops a module named ``module'' on the
+host with hostname ``hostname''. It signals the communicator that the module
+should be stopped and stops any connections and listening sockets for that
+module. \\
+
+\subsection{update}
+The method update returns all observations by any vision module since the last
+update. It should be called from the SensorIntegrator. \\
+
+\subsection{send\_command}
+The method send\_command(hostname, module, command, params) sends a command to
+the specified module running on the specified host. The command send is a
+dictionary, formed like this:
+
+\begin{lstlisting}
+{
+    command: "name_of_command",
+    params: {
+                params1: "value",
+                params2: "value2"
+            }
+}
+\end{lstlisting}
+
+\subsection{communicator\_command}
+The method communicator\_command can sends a command to a specified
+communicator. This can be used to send custom commands to the communicator, when
+required. The basic use for this is to modify camera parameters/selection
+because the communicator handles this through the use of the VideoManager.
+Currently, the following commands are recognized by the communicator.
+
+\begin{itemize}
+    \item \textbf{set\_nao\_camera} To set the camera to the top camera 
+        (camera = 0) or the chin camera (camera = 1)
+    \item \textbf{diag} Returns diagnostic information from the communicator,
+        such as the active video sources and the number of connections.
+    \item \textbf{available\_sources} Returns the available video sources. This
+        will try to start and stop all video sources that are not currently
+        active. It will take a while to complete and, if the video drivers
+        are buggy/unstable, might cause a crash of the video manager. It should
+        work howere, so if you experience any problems, please report them.
+\end{itemize}
+
+An example:
+\begin{lstlisting}
+# Set the Nao Camera to use the chin camera
+vc.communicator_command("localhost", "set_nao_camera", {"camera": 1})
+\end{lstlisting}
+
+\section{CommunicatorConnector}
+The CommunicatorConnector connects to the communicator on the vision laptops. It
+sends the following commands: ``start\_module'', ``stop\_module'',
+``restart\_module''. All three commands are accompanied by a field ``module''
+that states the full command to execute on the server, such as ``surfdetect
+-traintime 50 -delaytime 5''. The ``start\_module'' command should be
+accompanied by a ``port'' field which should give the port to which the vision
+module should connect. \\
+
+It is then the communicators job to execute that command and make sure that
+additional parameters specifying the port and hostname of the controller are
+added to the command line.
+
+\section{VisionModuleConnectionHandler}
+This class handles a connection with a module in vision laptop. Upon connection,
+it sends a ``send-capabilities'' command, which requests the objects that module
+can recognize. You can see examples of how to send heartbeat, observations and
+recognizable objects in objectdetector.py and visionmodule\_example.py. 
+
+There is a abstract vision module available which you can subclass. See the
+section below on Vision Modules for more information. \\
+
+It accepts the following commands which should come from the vision modules:
+``recognizable-object'', ``observation'' and ``heartbeat''. \\
+
+``recognizable-object'' command should be accompanied by a field ``object-name''
+that gives the name of the object it can recognize. Therefore, for each module
+you should add a function called \textbf{handle\_command} which reads the string
+from the vision controller and sends back the recognizable-objects for that
+module. You can see a working example in the objectdetector.py and the
+visionmodule\_example.py in the vision folder.  \\
+
+``observation'' should be accompanied by the data of the observation, such as
+coordinates, object name and other fields. \\
+
+``heartbeat'' is basically command that indicates the module is still properly
+running but does not have any data to send. \\
+
+The ConnectionHandler keeps a timer that assumes a module has failed when it
+does not send any data in 10 seconds. In that case, it will shut down and
+request a restart from the VisionController. \\
+
+\section{Vision Modules}
+Vision Modules are the modules started by the Communicator. They will be called
+with at least a 'port=<port>' and a 'host=<host>' argument. These parameters
+will be added to the command line specified in the configuration file by the
+communicator. The communicator obtains the port from the VisionController in the
+start\_module request and fills in the hostname by the host that has a
+connection to the communicator. As mentioned above, the port will be numeric
+when the communicator is running on a different host than the brain, and a
+string (e.g. Vision\_51323) when runnning on the same machine, indicating that a
+Unix Domain Socket should be used to connect, located in /tmp (so,
+/tmp/Vision\_51323). \\
+
+As mentioned above, a vision module should send data to the vision controller at
+least once every 10 seconds, to indicate that it is still running. If it does
+not do this, the vision controller will disconnect and request a restart from
+the communicator. If the vision module has no meaningful data to send for over
+10 seconds, it should send a heartbeat command instead. \\
+
+To make writing vision module easier and release you from having to worry about
+connecting to the brain and send heartbeats, an AbstractVisionModule base class
+is available. This base class has a constructor which sets up the hostname and
+port and some other administrative tasks. It has a connect method that will
+connect to the brain using the hostname and port specified on the command line.
+It has a train method that can be used to train on training data, for example,
+for face recognition, and a run method that will run the module indefinitely,
+until aborted, killed or disconnected by the Vision Controller. \\
+
+\subsection{Implementation}
+To use the AbstractVisionModule as a base for your module, you should use the
+examplemodule.py in the vision directory as a starting point. You should at
+least implement three methods: the constructor, train and run. The constructor
+will have to call the parent constructor, like this: \\
+
+\begin{lstlisting}
+    def __init__(self, host, port):
+        super(MyVisionModule, self).__init__(host, port)
+        # do your own initialization here
+\end{lstlisting}
+
+This will set up the communication. Before the actual connection is made, be
+sure to call the connect() method of the vision module. \\
+
+The train method should \textit{pass} or train on training data. Afterwards, the
+run method should be called. The run method should loop until the brain
+disconnects. You should call the update method from the run method at regular
+intervals, for example on each loop. This will make sure observations are sent
+to the Brain and that a heartbeat is sent if nothing else is sent. Please be
+sure to not hog the CPU by adding sleeps at some frequency (brain runs at 10
+Hz). Some modules accept a update\_frequency parameter, you could also use this
+if you like. For the sleeping, you can use the Ticker module. An example run
+method could be: \\
+
+\begin{lstlisting}
+def run(self):
+    from util.ticker import Ticker
+    ticker = Ticker(10) # Run at 10 Hz
+    while self.isconnected():
+        ticker.tick() # Perform sleep
+        self.add_property('name', 'object')
+        self.add_property('what', 'chair')
+        self.store_observation()
+        self.update()
+\end{lstlisting}
+
+The tick() method will check the time since the last tick and the current time
+and will sleep for as long as necessary to achieve the requested frequency (10
+Hz in this case). Optionally, can split this in two commands, like this: \\
+
+\begin{lstlisting}
+def run(self):
+    from util.ticker import Ticker
+    ticker = Ticker(10) # Run at 10 Hz
+    while self.isconnected():
+        ticker.start_tick() # Start tick
+        self.add_property('name', 'object')
+        self.add_property('what', 'chair')
+        self.store_observation()
+        self.update()
+        ticker.end_tick() # Perform sleep
+\end{lstlisting}
+
+This does the same thing. Both the tick() and the end\_tick() command will
+return the time spent in time.sleep(). If you pass False to the end\_tick()
+method, it will still return the same amount of time but will not actually
+sleep. You can use this to use another method of sleeping. \\
+
+The example uses the add\_property() method to add properties of a current
+observation/command for the Brain. The first argument is the name of the
+property to set. You can specify the name, and if you omit this, 'unknown' will
+be used as the name is mandatory in the VisionController. The second parameter
+is the value of the property. You can add as many properties as you like. You
+do, however, need to add at least one property before anything will be sent to
+the VisionController. \\
+
+The call to store\_observation() is not strictly required in this example. It
+ensures that the current observation will be sent, but it is also called once in
+the update method, right before the observations are sent. You do, however, need
+to use store\_observation() if the module wants to send more than one
+observation per iteration. If you do not do this, the properties you set will be
+combined into a single observation. \\
+
+If, at some point, you need to enter a separate loop that takes a long time to
+complete, make sure you call the update() method at least once every 10 seconds,
+because otherwise the vision module will be killed. If you prefer to just send a
+heartbeat instead, you can use the \_\_send\_heartbeat() function. Since this is
+a private method of AbstractVisionModule, you need to call it like this:
+
+\begin{lstlisting}
+self._AbstractVisionModule__send_heartbeat()
+\end{lstlisting}
+
+However, this is not recommended; the update() method is prefered. 
+
+\section{Protocol}
+The protocol between VisionController and Communicator and between VisionModule
+and VisionController is quite simple. The ThreadedSocket class takes care of
+wrapping the Python objects using pickle. \\
+
+The commands are send as a Python dictionary, with one obligatory field,
+command. The other fields depend on the command that is sent. For example: \\
+
+\begin{lstlisting}
+{
+    "command":      "recognizable-object",
+    "object-name":  "couch"
+}
+\end{lstlisting}
+
+or
+ 
+
+\begin{lstlisting}
+{
+    "command":      "observation",
+    "detections":  "blah"
+    "locations": "-150|250"
+}
+\end{lstlisting}
+
+\section{Communicating with Sensor Integrator}
+After the detections are added, the vision controller sends the observations to
+the sensor integration by wrapping the detection in a dictionary with the name
+as \textbf{vision.observations}, time stamp and finally the detections that were
+sent by the vision module to the vision controller (without the command
+section).  IT is possible that we change the way it wraps up the observations by
+the vision controller.
+
+\end{document}

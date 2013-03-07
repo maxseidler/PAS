@@ -1,0 +1,111 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{courier}
+
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= black,
+	linkcolor= black,
+    citecolor= black,
+}
+
+\lstset{language=c, frame=lines, basicstyle=\tt, tabsize=4, numberstyle=\tt}
+
+
+\title{HOWTO - Start with the ColorBlob Detector \\ \small{Related courses: Robotica, PAS1 and PAS2}}
+\author{Team BORG}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This document introduces you to the ColorBlob detector module.
+
+\textbf{Please note that this document is a work in progress and may be updated in time.}
+
+\section{Installation}
+
+\begin{enumerate}
+    \item Install python, opencv and pygame on a linux box:
+\begin{lstlisting}
+# sudo apt-get update
+# sudo apt-get install python python-opencv python-pygame
+\end{lstlisting}
+    \item Use Python \lstinline{pip} or install manually if the above does not work.
+\end{enumerate}
+
+\section{Basic Training Procedure}
+
+The basic training procedure is as follows.
+
+\begin{enumerate}
+    \item Create an empty directory.
+    \item Create as many \lstinline{*.colorblob} files as objects (color blobs) you like to detect inside this directory. 
+        Make sure the files are \textbf{empty}.
+    \item Add the blobdetector module to your config file and specify the absolute path of the directory (see \lstinline{config_blob} as a example).
+    \item Make sure that the ``train'' configuration parameter inside the config file is set to ``True''.
+    \item Now execute the start.sh script or the startGUI.sh application (and thus the blobdetection module as well). 
+        The videofeed of the Nao (or any other video input that you have selected in the config file) should now be visible.
+    \item Use the ``o'' and ``p'' keys to select the \lstinline{*.colorblob} file.
+    \item Now click on the object that you like to be detected. 
+        Make sure to click a few times while placing the object in different angles and locations.
+        (The more you click the more processing power it requires to detect the object.)
+    \item Do this for each object and press 'k' to save all *.colorblob files.
+\end{enumerate}
+
+\section{Basic Usage}
+
+Basic usage in your behavior is as follows:
+\begin{enumerate}
+    \item Use the same name as the \lstinline{*.colorblob} file to retreive the observation from memory.
+    \item The observation has 3 fields: ``x'', ``y'' and ``size''. 
+        The ``x'' and ``y'' is the absolute location of the object and ``size'' is the relative size of the object (a number between 0 and 1).
+    \item See the ``exampleblobdetector'' behavior and config file for more details.
+\end{enumerate}
+
+\section{Keyboard Shortcuts}
+
+The following keyboard shortcuts are available during the training procedure (e.d. the train parameter is set to true in the config file).
+
+\begin{enumerate}
+    \item[\textbf{f}:] To freeze the current image.
+    \item[\textbf{l}:] To load the (specified) color cube list.
+    \item[\textbf{s}:] To save the (specified) color cube list.
+    \item[\textbf{d}:] To empty the (specified) color cube list.
+    \item[\textbf{a}:] To increase the cube size for the current blob.
+    \item[\textbf{z}:] To decrease the cube size for the current blob.
+    \item[\textbf{u}:] To remove the last newly added color from the color cube list.
+    \item[\textbf{p}:] To select the next \lstinline{*.colorblob} file.
+    \item[\textbf{o}:] To select the previous \lstinline{*.colorblob} file.
+    \item[\textbf{k}:] To save all colorblob files.
+\end{enumerate}
+
+\section{Training From a Behavior}
+
+To train the colorblob module on the fly using a behavior, you are required to send a specific command to the colorblob module using the visioncontroller.
+You can do this using the \lstinline{send_command} method of the visioncontroller. 
+
+The command to send is ``train'' and the parameters to use are as follows:
+\begin{enumerate}
+    \item \lstinline{box}: Specifies the top-left corner (tuple) and bottom-right corner (tuple) of the square to sample.
+    \item \lstinline{sample_count}: Specifies the amount of pixels to sample.
+    \item \lstinline{name}: Specifies the name of the file as specified in the \lstinline{*.colorblob} file directory.
+\end{enumerate}
+
+See for more information the ``\lstinline{exampleblobdetectorface}'' behavior and the \\
+``\lstinline{config_example_blobdetector_face}'' configuration file.
+
+\end{document}
+

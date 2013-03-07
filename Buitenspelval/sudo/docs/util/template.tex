@@ -1,0 +1,85 @@
+% [page size, font size, recto-verso]{style of the document}
+\documentclass[a4paper, 12pt, oneside]{report}
+
+% Encoding of this file. On Linux, all files are UTF8 encoded.
+\usepackage[utf8x]{inputenc}
+
+%Used to make nice looking listings:
+\usepackage{listings}
+
+% To write mathematical formula:
+% \begin{align} ... \end{align}, \begin{equation} ... \end{equation}
+\usepackage{amsmath, amssymb}
+
+% To insert graphics:
+% \includegraphics[options]{path}
+\usepackage{graphicx}
+
+% The allowed type of image files.
+\DeclareGraphicsExtensions{.pdf, .png}
+
+% To include code file without any layout
+% \verbatiminput{path}
+\usepackage{verbatim}
+
+% To include PDF files
+% \includepdf[pages = z,x-y]{path}
+\usepackage{pdfpages}
+
+% To do tables on many pages
+% \begin{longtable}{define the columns} ... \end{longtable}
+\usepackage{longtable}
+
+
+\textwidth=16cm
+\oddsidemargin=0pt
+\evensidemargin=0pt
+
+%% The 3 variables which you must initialize:
+% Title of the document,
+\newcommand{\titleVariable}{Put the title}
+% The author(s),
+\newcommand{\authorVariable}{Put the authors}
+% The date of the first release.
+\newcommand{\firstRelease}{Put the date of the first release}
+
+\usepackage{hyperref}
+% To create all hypertext links for the bibliography, the figures, the bookmarks etc.
+% \url{http://www.thewebsite.org}
+\hypersetup{
+% 	backref=true,
+% 	pagebackref=true,
+% 	hyperindex=true,
+	colorlinks=true,
+	breaklinks=true,
+	urlcolor= blue,
+	linkcolor= blue,
+% 	bookmarks=true,
+	bookmarksopen=true,
+	pdftitle={\titleVariable},
+	pdfauthor={\authorVariable},
+	pdfsubject={Documentation}
+}
+
+\title{\titleVariable}
+\author{\authorVariable}
+
+
+\date{\centering First release: \firstRelease \\ Last modification: \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+% To create a table of contents at the beginning of the documentation.
+\tableofcontents
+
+\chapter{}
+\section{}
+\subsection{}
+\subsubsection{}
+
+
+\end{document}

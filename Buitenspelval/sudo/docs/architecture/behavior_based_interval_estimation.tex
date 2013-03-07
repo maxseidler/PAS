@@ -1,0 +1,181 @@
+\documentclass[a4paper, 12pt, oneside]{report}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.pdf, .png}
+\usepackage{verbatim}
+\usepackage{hyperref}
+
+\newcommand{\titleVariable}{Behavior Based Interval Estimation}
+\newcommand{\authorVariable}{Marko Doornbos}
+\newcommand{\firstRelease}{20-11-2012}
+
+\hypersetup{
+%   backref=true,
+%   pagebackref=true,
+%   hyperindex=true,
+    colorlinks=true,
+    breaklinks=true,
+    urlcolor= blue,
+    linkcolor= blue,
+%   bookmarks=true,
+    bookmarksopen=true,
+    pdftitle={\titleVariable},
+    pdfauthor={\authorVariable},
+    pdfsubject={Documentation}
+}
+
+\begin{document}
+
+\title{\titleVariable \\ \small{Robot Cognition Laboratory \\ Artificial Intelligence and Cognitive Engineering Institute \\ Groningen University}}
+\author{\authorVariable}
+\date{\centering First release: \firstRelease \\ Last modification: \today}
+
+%Insert here title
+\maketitle
+
+%Insert here table of contents
+\tableofcontents
+
+
+\chapter{What does this do?}
+
+\section{Introduction}
+
+The BBIE support for the BORG architecture allows you to use Interval Estimation learning on multiple versions of the same behavior.
+This allows you to have multiple versions of the same behavior, with the robot learning which version works best while it's executing them.
+
+\section{What is Interval Estimation?}
+
+Interval Estimation is a statistical machine learning algorithm.
+For a more thorough discussion, read the article \emph{On-line robot learning using the interval estimation algorithm} by T. van der Zant, M.A. Wiering and J. van Eijck.
+
+The basic idea is that you have several versions of a behavior and want to learn which version works best.
+To do so, each version is first executed a minimum number of times.
+Then, a statistical estimate of the distribution of completion times is made for each version.
+For each of these distributions, a confidence interval is calculated.
+Depending on the nature of the task, the version with the lowest lower bound or the highest upper bound on their interval is then chosen for execution.
+For tasks where speed is better, the lower bound is used.
+For tasks where the behavior should run as long as possible before reaching its postcondition, you use the upper bound.
+
+Using the new data from the execution, the relevant interval is updated.
+
+This way, the confidence intervals will stabilize over time and the learning will converge to one, or sometimes two, versions.
+Even if the version converged to is not the optimal one, it is at least a good one.
+
+Convergence will typically occur after as few as 5 to 10 executions, although this may very depending on the nature and quality of the behaviors.
+
+\section{When to use}
+
+This system is primarily useful for determining which version of a behavior works best, both for research and during runtime in the field.
+It can also be used to record execution times for a behavior.
+
+If you don't want to use the system, read section 2.4 about how to ensure you're not using it.
+
+\chapter{How to use}
+
+\section{Setup}
+
+To use BBIE for a behavior, create a file named \verb=<behaviorname>.pkl= using the method \verb=create_ML_file()= in the \verb=Brain/src/bbie/learningFileGenerator.py= file.
+\verb=<behaviorname>= should be the name fo the behavior you want to use BBIE for.
+Once such a file has been created, place it in the folder \verb=Brain/src/bbie/IE_files/=.
+There, it will be detected by the system and used if it can be read correctly.
+
+If a file called \verb=<behaviorname>_0.py= exists, the architecture will still always use that one, and BBIE will not be used.
+
+\section{Learning file creation.}
+
+The BBIE uses .pkl files in which dictionaries containing the relevant information are stored.
+To create such a file, import \verb=Brain/src/bbie/learningFileGenerator.py=.
+Then, run the method \verb=create_ML_file()= with the appropriate arguments.
+These arguments are:
+
+\begin{enumerate}
+\item{$goal$}, a string indicating the target file location. Keep in mind this should end in \verb=<behaviorname>.pkl=
+\item{$behavior\_name$}, a string indicating the behavior the file is for. For internal reference only.
+\item{$id\_list$}, a list of the behavior versions you want to run. Should be positive integers.
+\item{$max\_duration$}, the cutoff time limit for the behavior in seconds. If you don't want to use it, just enter a suitably high number.
+\item{$top\_nr$}, the number of versions of the behavior which should be considered for execution.
+This way, you can make sure only the best few versions will be used past training.
+\item{$use\_lower=True$} The system prefers faster behaviors by default.
+Change this to False for behaviors where running longer is better, for example goalkeeping behavior in robot soccer.
+True by default.
+\item{$confidence\_level=95$}, the confidence interval used for the interval estimation. The default is $95\%$.
+\item{$min\_to\_train=5$}, the minimum number of executions for each version.
+This is used to ensure a decent estimate of execution times before the normal selection starts.
+\item{$max_tries = 10$}, the maximum number of tries for a behavior before it is stopped permanently.
+You can use this to ensure a behavior does not just keep failing.
+Use the $is_stopped()$ method to check if a behavior is stopped in higher-level ones.
+\end{enumerate}
+
+The items which have a value after them have that as their default value in the creation method.
+Keep in mind that in a Python session, these default values will be overridden if you call the method with another value!
+In that case, reload the imported file to ensure you get the values you want, or just re-enter the default ones.
+
+\section{Practical considerations}
+
+Preferably, do not add the .pkl files to the repo, unless it's something like a trained file for a competition.
+In that case, they could be stored somewhere with an altered name to indicate what they're for.
+Just store them somewhere else, like on your own account or in a dropbox, and copy them into the \verb=Brain/src/bbie/IE_files/= folder when you need to use them.
+This way, the files are not accidentally used and trained for things you do not want, when other people are using the behaviors you made them for.
+
+\section{Not using the system}
+
+If you do not want to use BBIE, just make sure the are no files in the \verb=Brain/src/bbie/IE_files/= folder.
+That way, all behaviors are executed as before the addition of BBIE with the exception that the cutoff time is now at 24 hours instead of 50000 seconds plus the time since midnight on January first, 1970.
+
+If there is no .pkl file for a behavior, the system will simply execute version 1, with the usual override for version 0.
+
+\section{Important notes}
+
+There are some rather relevant things to keep in mind when using BBIE. 
+
+First of all, a behavior needs to finish/fail/time out to be registered.
+This means you want your behavior to have a postcondition that can be reached during execution or be set by another, higher-level, behavior.
+So make sure any behaviors you create have a postcondition, even if you're not using it yourself.
+Others might want to.
+
+If you want to add an additional version to a learning file, load the data in Python and manually add another dict with the proper elements to the list in \verb='behaviors'=.
+Check the \verb=learningFileGenerator.py= file to see what needs to be in it.
+Make sure you also set the \verb='training_completed'= value to False, to ensure training happens.
+A separate method for adding new versions or removing old ones may be added in the future.
+
+\chapter{Reading information}
+
+\section{Stored data}
+
+The .pkl file for a behavior stores not only the settings, but also the learned data.
+It is a dict containing the following keys:
+
+\begin{enumerate}
+\item{$'behavior\_name'$} is the name fo the behavior this file is for.
+\item{$'behaviors'$} is a list of dicts, with the info for each individual version.
+\item{$'use\_lower'$} stores the $use\_lower$ value.
+\item{$'confidence\_level'$} stores the confidence interval size.
+\item{$'top\_nr'$} stores the $top\_nr$ value.
+\item{$'max\_duration'$} stores the maximum execution duration for the execution of a version.
+\item{$'training\_completed'$} stores if the training phase of the interval estimation has been completed.
+\item{$'min\_to\_train'$} indicates how many times each behavior has to be executed to consider training complete.
+\item{$'max_tries'} is the maximum number of tries for a behavior before it is stopped permanently.
+\end{enumerate}
+
+The list of dicts in 'behaviors' has a dict for each version of the behavior that is used for the IE.
+Each of those dicts contains the following keys:
+
+\begin{enumerate}
+\item{$'id'$} is the id of the version this is for. This is the number in the version's name.
+\item{$'completion\_times'$} is a list of the times it took for the behavior to reach its postcondition or be cut off for taking too long or failing.
+\item{$'non\_cutoff\_times'$} is a list of the times taken when the behavior reached its postcondition. Not used in the execution, but useful for analysis.
+\item{$'failed\_times'$} is a list of the times in execution when the behavior registered as failed and was cut off.
+\item{$'upper'$} is the current upper bound of the confidence interval.
+\item{$'lower'$} is the current lower bound of the confidence interval.
+\item{$'times\_completed'$} is the number of times the behavior reached its postcondition.
+\item{$'times\_run'$} is the number of times the behavior reached its postcondition, failed or was cut off for taking too long.
+\item{$'times\_failed'$} is the number of times the behavior was stoped because it registered as failed.
+\end{enumerate}
+
+If you want to access this information for things like data analysis, you can imply open the file using Python and unpickle it to a value.
+You can then access the dicts.
+
+\end{document}
+
