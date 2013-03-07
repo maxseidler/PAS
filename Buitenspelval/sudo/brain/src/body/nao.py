@@ -684,8 +684,36 @@ class Nao(object):
         pitch = HEAD_PITCH + center_pitch
         self.set_angles(['HeadYaw', 'HeadPitch'], [yaw, pitch], 0.2, radians=True)
         
-    def select_camera(self, cameraNr):
-        self.camera = cameraNr
+    def select_camera(self, cameranr):
+        """
+        This method lets us select the camera (0 is top, 1 is bottom)
+        """
+        
+        self.camera = cameranr
+        
+        
+    def set_bottom_camera(self):
+        """
+        parameters voor de onderste camera
+        self.__Video is de proxy
+        """
+        
+        try:
+            self.__Video.setCameraParameter(kCameraAutoGainID, 13,0)
+        except:
+            print "Camera autogain uitzetten werkt niet goed"
+        
+        
+    def set_top_camera(self):
+        """
+        parameters voor de bovenste camera
+        """
+        
+        try:
+            self.__Video.setCameraParameter(kCameraAutoGainID, 13,0)
+        except:
+            print "Camera autogain uitzetten werkt niet goed"
+        
 
 #########
 # NOTES #
